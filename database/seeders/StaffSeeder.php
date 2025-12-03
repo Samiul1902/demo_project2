@@ -2,16 +2,24 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-
 use App\Models\Staff;
+use App\Models\StaffSchedule;
 
 class StaffSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     *
+     * Seeds core staff so admins can manage schedules and availability (FR‑11).[file:1]
+     */
     public function run(): void
     {
-        Staff::truncate();
+        // Clear schedules first because they depend on staff_id.
+        StaffSchedule::query()->delete();
+
+        // Use delete() instead of truncate() due to FK from staff_schedules to staff.
+        Staff::query()->delete();
 
         Staff::insert([
             [
@@ -44,4 +52,3 @@ class StaffSeeder extends Seeder
         ]);
     }
 }
-

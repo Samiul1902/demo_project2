@@ -15,12 +15,14 @@ class StaffAdminController extends Controller
      */
     public function index()
     {
-        $staff = Staff::orderBy('branch')
+        $staff = Staff::with('schedules')
+            ->orderBy('branch')
             ->orderBy('name')
             ->get();
 
         return view('admin.staff', compact('staff'));
     }
+
 
     // Later you can add create/store/edit/update methods
     // and a separate controller or actions for weekly schedules.

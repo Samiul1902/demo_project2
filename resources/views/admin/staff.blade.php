@@ -6,7 +6,7 @@
             </h1>
             <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.6rem;">
                 Manage stylists, assign them to branches, and configure their weekly
-                availability as required by the admin module (FR‑11).[file:1]
+                availability as required by the admin module (FR‑11, FR‑16).[file:1]
             </p>
 
             {{-- Top bar --}}
@@ -29,15 +29,7 @@
                 </div>
             </div>
 
-            {{-- Staff table (static demo data) --}}
-            @php
-                $staff = [
-                    ['name' => 'Ayesha', 'role' => 'Senior Stylist', 'branch' => 'Banani',    'rating' => 4.8, 'status' => 'Active'],
-                    ['name' => 'Fahim',  'role' => 'Stylist',        'branch' => 'Dhanmondi', 'rating' => 4.6, 'status' => 'Active'],
-                    ['name' => 'Nadia',  'role' => 'Makeup Artist',  'branch' => 'Gulshan',   'rating' => 4.9, 'status' => 'On leave'],
-                ];
-            @endphp
-
+            {{-- Staff table --}}
             <div class="card" style="overflow-x:auto;">
                 <table class="table">
                     <thead>
@@ -46,39 +38,61 @@
                             <th>Role</th>
                             <th>Branch</th>
                             <th>Rating</th>
-                            <th>Status</th>
+                            <th>Availability</th>
                             <th style="text-align:right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($staff as $st)
+                        @forelse($staff as $st)
                             @php
-                                $statusClass = $st['status'] === 'Active' ? 'badge-green' : 'badge-pink';
+                                $statusClass = $st->status === 'Active' ? 'badge-green' : 'badge-pink';
+
+                                // Count working days from schedules relation (FR‑11).[file:1]
+                                $workingDays = $st->schedules
+                                    ? $st->schedules->where('status', 'Working')->count()
+                                    : 0;
                             @endphp
                             <tr>
-                                <td>{{ $st['name'] }}</td>
-                                <td>{{ $st['role'] }}</td>
-                                <td>{{ $st['branch'] }}</td>
-                                <td>{{ $st['rating'] }}★</td>
+                                <td>{{ $st->name }}</td>
+                                <td>{{ $st->role }}</td>
+                                <td>{{ $st->branch }}</td>
+                                <td>{{ number_format($st->rating, 1) }}★</td>
                                 <td>
-                                    <span class="{{ $statusClass }}">{{ $st['status'] }}</span>
+                                    <span class="{{ $statusClass }}">{{ $st->status }}</span>
+                                    @if($workingDays > 0)
+                                        <div style="font-size:0.75rem; color:#9ca3af; margin-top:0.15rem;">
+                                            {{ $workingDays }} working days set
+                                        </div>
+                                    @else
+                                        <div style="font-size:0.75rem; color:#9ca3af; margin-top:0.15rem;">
+                                            No schedule yet
+                                        </div>
+                                    @endif
                                 </td>
                                 <td style="text-align:right;">
                                     <button type="button"
                                             class="btn glow-btn"
                                             style="padding:0.3rem 0.7rem; font-size:0.8rem; background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;"
-                                            data-staff-name="{{ $st['name'] }}"
+                                            data-staff-id="{{ $st->id }}"
+                                            data-staff-name="{{ $st->name }}"
                                             onclick="openScheduleModal(this)">
                                         Edit schedule
                                     </button>
                                     <button type="button"
                                             class="btn btn-pink glow-btn"
-                                            style="padding:0.3rem 0.7rem; font-size:0.8rem;">
+                                            style="padding:0.3rem 0.7rem; font-size:0.8rem;"
+                                            onclick="openStaffModal('edit')">
                                         Edit
                                     </button>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="6" style="font-size:0.85rem; color:#9ca3af; text-align:center;">
+                                    No staff found. Add stylists to start managing schedules and availability.[file:1]
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -147,15 +161,15 @@
         </div>
     </div>
 
-    {{-- Weekly schedule modal --}}
+    {{-- Weekly schedule modal (still UI-only, later will save to staff_schedules) --}}
     <div id="scheduleModal" class="modal-backdrop">
         <div class="modal-card fade-in-up">
             <h2 style="font-size:1.2rem; font-weight:800; margin-bottom:0.4rem;">
                 Weekly schedule – <span id="scheduleStaffName" style="color:#fb7185;"></span>
             </h2>
             <p style="font-size:0.8rem; color:#9ca3af; margin-bottom:0.7rem;">
-                Define working hours for each day. Later this data will be used to generate
-                available time slots for bookings (FR‑3 and FR‑11).[file:1]
+                Define working hours for each day. Later this data will be stored in the
+                staff_schedules table and used to generate available time slots for bookings (FR‑3, FR‑11).[file:1]
             </p>
 
             @php
@@ -199,12 +213,7 @@
             const modal = document.getElementById('staffModal');
             const title = document.getElementById('staffModalTitle');
 
-            if (mode === 'edit') {
-                title.textContent = 'Edit staff';
-            } else {
-                title.textContent = 'Add staff';
-            }
-
+            title.textContent = mode === 'edit' ? 'Edit staff' : 'Add staff';
             modal.classList.add('show');
         }
 
