@@ -1,0 +1,60 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\Admin\ServiceAdminController;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+| Frontend and admin routes for the SSBP-RMS prototype.
+*/
+
+/**
+ * Public / customer routes
+ * Covers FR‑1 to FR‑7 UI: profile, services, booking, history, feedback.[file:1]
+ */
+
+// Home page
+Route::view('/', 'public.home')->name('home');
+
+// Services catalog & detail (now using DB + controllers)
+Route::get('/services', [ServiceController::class, 'index'])->name('public.services');
+Route::get('/services/{service}', [ServiceController::class, 'show'])->name('public.service.detail');
+
+// Booking flow
+Route::view('/booking', 'public.booking')->name('public.booking');
+
+// Profile & booking history
+Route::view('/profile', 'public.profile')->name('public.profile');
+Route::view('/bookings', 'public.bookings')->name('public.bookings');
+
+// Feedback / reviews
+Route::view('/feedback', 'public.feedback')->name('public.feedback');
+
+
+/**
+ * Admin routes
+ * Covers FR‑9–FR‑16 UI: dashboard, services, staff, bookings, reports, branches.[file:1]
+ */
+
+Route::prefix('admin')->group(function () {
+    // Dashboard
+    Route::view('/dashboard', 'admin.dashboard')->name('admin.dashboard');
+
+    // Services management (controller uses DB)
+    Route::get('/services', [ServiceAdminController::class, 'index'])->name('admin.services');
+
+    // Staff & schedules
+    Route::view('/staff', 'admin.staff')->name('admin.staff');
+
+    // Booking approval/rejection
+    Route::view('/bookings', 'admin.bookings')->name('admin.bookings');
+
+    // Reports & analytics
+    Route::view('/reports', 'admin.reports')->name('admin.reports');
+
+    // Branch management
+    Route::view('/branches', 'admin.branches')->name('admin.branches');
+});
