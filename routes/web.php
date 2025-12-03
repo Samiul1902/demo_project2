@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\Admin\ServiceAdminController;
+use App\Http\Controllers\BookingController;
 use App\Models\Service;
 
 /*
@@ -61,3 +62,7 @@ Route::prefix('admin')->group(function () {
     // Branch management
     Route::view('/branches', 'admin.branches')->name('admin.branches');
 });
+
+
+// Booking form (GET is already defined); add POST to store booking
+Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');

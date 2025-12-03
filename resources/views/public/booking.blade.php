@@ -23,7 +23,29 @@
                 {{-- Left: booking form --}}
                 <div class="col-half">
                     <div class="card">
-                        <form id="bookingForm">
+                        <form id="bookingForm" method="POST" action="{{ route('booking.store') }}">
+                            @csrf
+
+                            {{-- Customer info (simple until auth is added) --}}
+                            <div style="margin-bottom:0.9rem;">
+                                <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
+                                    Your name *
+                                </label>
+                                <input type="text"
+                                       name="customer_name"
+                                       required
+                                       style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
+                            </div>
+
+                            <div style="margin-bottom:0.9rem;">
+                                <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
+                                    Phone (for SMS reminders)
+                                </label>
+                                <input type="text"
+                                       name="customer_phone"
+                                       style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
+                            </div>
+
                             {{-- Service --}}
                             <div style="margin-bottom:0.9rem;">
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
@@ -40,6 +62,9 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                {{-- Hidden service_id actually submitted to backend --}}
+                                <input type="hidden" name="service_id" id="serviceIdInput"
+                                       value="{{ $defaultService?->id }}">
                             </div>
 
                             {{-- Branch --}}
@@ -47,7 +72,7 @@
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Branch *
                                 </label>
-                                <select class="select" style="width:100%;" id="branchSelect">
+                                <select class="select" style="width:100%;" id="branchSelect" name="branch">
                                     <option>Banani Branch</option>
                                     <option>Dhanmondi Branch</option>
                                     <option>Gulshan Branch</option>
@@ -59,7 +84,7 @@
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Stylist preference
                                 </label>
-                                <select class="select" style="width:100%;" id="stylistSelect">
+                                <select class="select" style="width:100%;" id="stylistSelect" name="stylist_preference">
                                     <option>Any available stylist</option>
                                     <option>Ayesha (4.8★)</option>
                                     <option>Fahim (4.6★)</option>
@@ -75,13 +100,15 @@
                                     </label>
                                     <input type="date"
                                            id="dateInput"
+                                           name="date"
+                                           required
                                            style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
                                 </div>
                                 <div style="flex:1 1 0;">
                                     <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                         Time *
                                     </label>
-                                    <select class="select" style="width:100%;" id="timeSelect">
+                                    <select class="select" style="width:100%;" id="timeSelect" name="time" required>
                                         <option>10:00 AM</option>
                                         <option>11:30 AM</option>
                                         <option>3:30 PM</option>
@@ -97,16 +124,16 @@
                                     Special requests (optional)
                                 </label>
                                 <textarea id="notesInput"
+                                          name="notes"
                                           rows="3"
                                           style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.55rem 0.8rem; font-size:0.85rem; resize:vertical;"
                                           placeholder="Any specific preferences or instructions?"></textarea>
                             </div>
 
-                            <button type="button"
+                            <button type="submit"
                                     class="btn btn-pink glow-btn"
-                                    style="width:100%; margin-top:0.25rem;"
-                                    onclick="openConfirmation()">
-                                Confirm booking (UI only)
+                                    style="width:100%; margin-top:0.25rem;">
+                                Confirm booking
                             </button>
                         </form>
                     </div>
@@ -185,52 +212,13 @@
         </div>
     </section>
 
-    {{-- Confirmation modal --}}
-    <div id="confirmationModal" class="modal-backdrop">
-        <div class="modal-card fade-in-up">
-            <div style="width:3rem; height:3rem; border-radius:999px; background:rgba(34,197,94,0.18); display:flex; align-items:center; justify-content:center; margin:0 auto 0.75rem auto;">
-                <span style="font-size:1.6rem; color:#4ade80;">✓</span>
-            </div>
-            <h2 style="font-size:1.4rem; font-weight:800; text-align:center; margin-bottom:0.4rem;">
-                Booking confirmed (demo)
-            </h2>
-            <p style="font-size:0.85rem; color:#9ca3af; text-align:center; margin-bottom:0.9rem;">
-                In the final system, this step will generate a digital invoice and send SMS/Email
-                confirmation according to FR‑4 and FR‑8.[file:1]
-            </p>
-
-            <div class="card" style="font-size:0.85rem; margin-bottom:0.9rem;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Service</span><span id="modalService">—</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Date &amp; time</span><span id="modalDateTime">—</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Branch</span><span id="modalBranch">—</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span>Amount</span><span id="modalAmount">—</span>
-                </div>
-            </div>
-
-            <div style="display:flex; justify-content:center;">
-                <button type="button"
-                        class="btn btn-pink glow-btn"
-                        style="width:100%; max-width:260px;"
-                        onclick="closeConfirmation()">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         function updateSummaryFromForm() {
-            const serviceSelect = document.getElementById('serviceSelect');
-            const branchSelect  = document.getElementById('branchSelect');
-            const dateInput     = document.getElementById('dateInput');
-            const timeSelect    = document.getElementById('timeSelect');
+            const serviceSelect  = document.getElementById('serviceSelect');
+            const serviceIdInput = document.getElementById('serviceIdInput');
+            const branchSelect   = document.getElementById('branchSelect');
+            const dateInput      = document.getElementById('dateInput');
+            const timeSelect     = document.getElementById('timeSelect');
 
             if (serviceSelect) {
                 const opt = serviceSelect.options[serviceSelect.selectedIndex];
@@ -242,6 +230,10 @@
                 document.getElementById('summaryDuration').textContent = duration ? duration + ' min' : '—';
                 document.getElementById('summaryPrice').textContent    = 'BDT ' + price;
                 document.getElementById('summaryTotal').textContent    = 'BDT ' + Math.max(0, price - 50);
+
+                if (serviceIdInput) {
+                    serviceIdInput.value = serviceSelect.value;
+                }
             }
 
             if (branchSelect) {
@@ -255,29 +247,8 @@
             }
         }
 
-        function openConfirmation() {
-            updateSummaryFromForm();
-
-            const serviceText = document.getElementById('summaryService').textContent;
-            const dateText    = document.getElementById('summaryDate').textContent;
-            const timeText    = document.getElementById('summaryTime').textContent;
-            const branchText  = document.getElementById('summaryBranch').textContent;
-            const totalText   = document.getElementById('summaryTotal').textContent;
-
-            document.getElementById('modalService').textContent   = serviceText;
-            document.getElementById('modalDateTime').textContent  = dateText + ' • ' + timeText;
-            document.getElementById('modalBranch').textContent    = branchText;
-            document.getElementById('modalAmount').textContent    = totalText;
-
-            document.getElementById('confirmationModal').classList.add('show');
-        }
-
-        function closeConfirmation() {
-            document.getElementById('confirmationModal').classList.remove('show');
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
-            ['serviceSelect','branchSelect','dateInput','timeSelect'].forEach(function (id) {
+            ['serviceSelect', 'branchSelect', 'dateInput', 'timeSelect'].forEach(function (id) {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.addEventListener('change', updateSummaryFromForm);
