@@ -444,3 +444,35 @@ body {
 .table tr:hover td {
     background: rgba(15,23,42,0.7);
 }
+
+.glass-card {
+    backdrop-filter: blur(18px);
+    background: rgba(15,23,42,0.85);
+    border-color: rgba(148,163,184,0.4);
+}
+
+.nav-link {
+    color: #9ca3af;
+    text-decoration: none;
+    padding: 0.25rem 0;
+}
+.nav-link:hover {
+    color: #e5e7eb;
+}
+
+.hero-title-animate {
+    animation: heroTitleIn 0.9s ease-out forwards;
+    opacity: 0;
+    transform: translateY(16px);
+}
+
+@keyframes heroTitleIn {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
