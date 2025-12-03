@@ -32,4 +32,19 @@ class BookingController extends Controller
             ->route('public.bookings')
             ->with('status', 'Booking created with ID ' . $booking->id . ' and waiting for approval.');
     }
+
+    /**
+     * Simple booking history list (for now: all bookings).
+     * Later this will be filtered by logged‑in customer (FR‑5).[file:1]
+     */
+
+    public function index()
+    {
+        $bookings = Booking::with('service')
+            ->orderByDesc('date')
+            ->orderByDesc('time')
+            ->get();
+
+        return view('public.bookings', compact('bookings'));
+    }
 }

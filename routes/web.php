@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\Admin\ServiceAdminController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Admin\ServiceAdminController;
+use App\Http\Controllers\Admin\BookingAdminController;
 use App\Models\Service;
 
 /*
@@ -11,50 +12,55 @@ use App\Models\Service;
 | Web Routes
 |--------------------------------------------------------------------------
 | Frontend and admin routes for the SSBP-RMS prototype.
+| They implement the flows described in the SRS: browsing services,
+| booking appointments, viewing history, and admin management.[file:1]
 */
 
 /**
  * Public / customer routes
- * Covers FR‑1 to FR‑7 UI: profile, services, booking, history, feedback.[file:1]
  */
 
 // Home page
 Route::view('/', 'public.home')->name('home');
 
-// Services catalog & detail (DB + controllers)
+// Services catalog & detail (FR‑2 + FR‑10: services managed in admin, shown to users).[file:1]
 Route::get('/services', [ServiceController::class, 'index'])->name('public.services');
 Route::get('/services/{service}', [ServiceController::class, 'show'])->name('public.service.detail');
 
-// Booking flow (optional service pre-selected)
+// Booking flow
+// GET: booking form, optional {service} pre-selects a service in the form (FR‑3).[file:1]
 Route::get('/booking/{service?}', function (Service $service = null) {
     return view('public.booking', compact('service'));
 })->name('public.booking');
 
-// Profile & booking history
-Route::view('/profile', 'public.profile')->name('public.profile');
-Route::view('/bookings', 'public.bookings')->name('public.bookings');
+// POST: store booking in DB via controller (FR‑3, FR‑4, FR‑5).[file:1]
+Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
 
-// Feedback / reviews
+// Booking history page using real bookings table (FR‑5, FR‑6).[file:1]
+Route::get('/bookings', [BookingController::class, 'index'])->name('public.bookings');
+
+// Profile & feedback (still UI-only for now)
+Route::view('/profile', 'public.profile')->name('public.profile');
 Route::view('/feedback', 'public.feedback')->name('public.feedback');
 
 
 /**
  * Admin routes
- * Covers FR‑9–FR‑16 UI: dashboard, services, staff, bookings, reports, branches.[file:1]
+ * Covers dashboard, service management, staff, bookings and reports (FR‑9–FR‑16).[file:1]
  */
 
 Route::prefix('admin')->group(function () {
     // Dashboard
     Route::view('/dashboard', 'admin.dashboard')->name('admin.dashboard');
 
-    // Services management (controller uses DB)
+    // Services management (DB-backed list)
     Route::get('/services', [ServiceAdminController::class, 'index'])->name('admin.services');
 
-    // Staff & schedules
-    Route::view('/staff', 'admin.staff')->name('admin.staff');
+    // Bookings management (DB-backed list of all bookings)
+    Route::get('/bookings', [BookingAdminController::class, 'index'])->name('admin.bookings');
 
-    // Booking approval/rejection
-    Route::view('/bookings', 'admin.bookings')->name('admin.bookings');
+    // Staff & schedules (UI wired earlier)
+    Route::view('/staff', 'admin.staff')->name('admin.staff');
 
     // Reports & analytics
     Route::view('/reports', 'admin.reports')->name('admin.reports');
@@ -62,7 +68,3 @@ Route::prefix('admin')->group(function () {
     // Branch management
     Route::view('/branches', 'admin.branches')->name('admin.branches');
 });
-
-
-// Booking form (GET is already defined); add POST to store booking
-Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
