@@ -6,9 +6,18 @@
             </h1>
             <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.8rem;">
                 Choose your service, branch, stylist, date and time to confirm your booking.
-                Later this form will be connected to real appointments and invoices as required
-                in the SRS.[file:1]
+                Later this flow will create real appointments and invoices as described in FR‑3 and FR‑4.[file:1]
             </p>
+
+            @php
+                $allServices = \App\Models\Service::where('status', 'Active')
+                    ->orderBy('name')
+                    ->get();
+
+                $defaultService = isset($service) && $service
+                    ? $service
+                    : ($allServices->first() ?? null);
+            @endphp
 
             <div class="row" style="gap:2rem;">
                 {{-- Left: booking form --}}
@@ -21,18 +30,15 @@
                                     Service *
                                 </label>
                                 <select class="select" style="width:100%;" id="serviceSelect">
-                                    <option value="Premium Haircut" data-price="800" data-duration="45">
-                                        Premium Haircut – BDT 800 (45 min)
-                                    </option>
-                                    <option value="Facial Treatment" data-price="1200" data-duration="60">
-                                        Facial Treatment – BDT 1200 (60 min)
-                                    </option>
-                                    <option value="Bridal Makeup" data-price="5000" data-duration="120">
-                                        Bridal Makeup – BDT 5000 (120 min)
-                                    </option>
-                                    <option value="Hair Spa" data-price="1500" data-duration="90">
-                                        Hair Spa – BDT 1500 (90 min)
-                                    </option>
+                                    @foreach($allServices as $s)
+                                        <option value="{{ $s->id }}"
+                                                data-name="{{ $s->name }}"
+                                                data-price="{{ $s->price }}"
+                                                data-duration="{{ $s->duration }}"
+                                                @if($defaultService && $defaultService->id === $s->id) selected @endif>
+                                            {{ $s->name }} – BDT {{ $s->price }} ({{ $s->duration }} min)
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -115,11 +121,19 @@
 
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Service</span>
-                            <span id="summaryService">Premium Haircut</span>
+                            <span id="summaryService">
+                                {{ $defaultService?->name ?? 'Not selected' }}
+                            </span>
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Duration</span>
-                            <span id="summaryDuration">45 min</span>
+                            <span id="summaryDuration">
+                                @if($defaultService)
+                                    {{ $defaultService->duration }} min
+                                @else
+                                    Not selected
+                                @endif
+                            </span>
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Branch</span>
@@ -138,7 +152,13 @@
 
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Service price</span>
-                            <span id="summaryPrice">BDT 800</span>
+                            <span id="summaryPrice">
+                                @if($defaultService)
+                                    BDT {{ $defaultService->price }}
+                                @else
+                                    BDT 0
+                                @endif
+                            </span>
                         </div>
                         <div style="font-size:0.85rem; color:#22c55e; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Estimated loyalty discount</span>
@@ -146,12 +166,18 @@
                         </div>
                         <div style="font-size:1rem; font-weight:700; display:flex; justify-content:space-between; margin-top:0.15rem;">
                             <span>Total</span>
-                            <span id="summaryTotal" style="color:#fb7185;">BDT 750</span>
+                            <span id="summaryTotal" style="color:#fb7185;">
+                                @if($defaultService)
+                                    BDT {{ max(0, $defaultService->price - 50) }}
+                                @else
+                                    BDT 0
+                                @endif
+                            </span>
                         </div>
 
                         <p style="font-size:0.8rem; color:#9ca3af; margin-top:0.75rem;">
-                            You will earn <span style="color:#4ade80; font-weight:600;">75 loyalty points</span> for this booking, 
-                            which can be used in the membership system defined in the requirements.[file:1]
+                            You will earn <span style="color:#4ade80; font-weight:600;">loyalty points</span> for this booking,
+                            which can be used in the membership system defined in the requirements (FR‑15/FR‑20).[file:1]
                         </p>
                     </div>
                 </div>
@@ -169,31 +195,29 @@
                 Booking confirmed (demo)
             </h2>
             <p style="font-size:0.85rem; color:#9ca3af; text-align:center; margin-bottom:0.9rem;">
-                In the final system, this step will generate a digital invoice and send SMS/Email 
+                In the final system, this step will generate a digital invoice and send SMS/Email
                 confirmation according to FR‑4 and FR‑8.[file:1]
             </p>
 
             <div class="card" style="font-size:0.85rem; margin-bottom:0.9rem;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Service</span><span id="modalService">Premium Haircut</span>
+                    <span>Service</span><span id="modalService">—</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Date &amp; time</span><span id="modalDateTime">–</span>
+                    <span>Date &amp; time</span><span id="modalDateTime">—</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Branch</span><span id="modalBranch">–</span>
+                    <span>Branch</span><span id="modalBranch">—</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
-                    <span>Amount</span><span id="modalAmount">BDT 750</span>
+                    <span>Amount</span><span id="modalAmount">—</span>
                 </div>
             </div>
 
-            <div style="display:flex; gap:0.5rem; justify-content:center;">
-                <a href="{{ route('public.bookings') }}" class="btn btn-pink glow-btn" style="flex:1; text-align:center;">
-                    Go to My Bookings
-                </a>
-                <button type="button" class="btn glow-btn"
-                        style="flex:1; background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;"
+            <div style="display:flex; justify-content:center;">
+                <button type="button"
+                        class="btn btn-pink glow-btn"
+                        style="width:100%; max-width:260px;"
                         onclick="closeConfirmation()">
                     Close
                 </button>
@@ -202,41 +226,49 @@
     </div>
 
     <script>
-        const serviceSelect = document.getElementById('serviceSelect');
-        const branchSelect = document.getElementById('branchSelect');
-        const dateInput = document.getElementById('dateInput');
-        const timeSelect = document.getElementById('timeSelect');
+        function updateSummaryFromForm() {
+            const serviceSelect = document.getElementById('serviceSelect');
+            const branchSelect  = document.getElementById('branchSelect');
+            const dateInput     = document.getElementById('dateInput');
+            const timeSelect    = document.getElementById('timeSelect');
 
-        function updateSummary() {
-            const selected = serviceSelect.options[serviceSelect.selectedIndex];
-            const name = selected.value;
-            const price = selected.getAttribute('data-price');
-            const duration = selected.getAttribute('data-duration');
+            if (serviceSelect) {
+                const opt = serviceSelect.options[serviceSelect.selectedIndex];
+                const name = opt.getAttribute('data-name') || opt.textContent;
+                const price = parseInt(opt.getAttribute('data-price') || '0', 10);
+                const duration = opt.getAttribute('data-duration') || '';
 
-            document.getElementById('summaryService').textContent = name;
-            document.getElementById('summaryDuration').textContent = duration + ' min';
-            document.getElementById('summaryPrice').textContent = 'BDT ' + price;
-            document.getElementById('summaryTotal').textContent = 'BDT ' + (price - 50);
-            document.getElementById('summaryBranch').textContent = branchSelect.value;
+                document.getElementById('summaryService').textContent  = name;
+                document.getElementById('summaryDuration').textContent = duration ? duration + ' min' : '—';
+                document.getElementById('summaryPrice').textContent    = 'BDT ' + price;
+                document.getElementById('summaryTotal').textContent    = 'BDT ' + Math.max(0, price - 50);
+            }
 
-            document.getElementById('summaryDate').textContent = dateInput.value || 'Not selected';
-            document.getElementById('summaryTime').textContent = timeSelect.value;
-
-            // also prepare modal
-            document.getElementById('modalService').textContent = name;
-            document.getElementById('modalBranch').textContent = branchSelect.value;
-            document.getElementById('modalAmount').textContent = 'BDT ' + (price - 50);
-            document.getElementById('modalDateTime').textContent =
-                (dateInput.value || 'Not selected') + ' at ' + timeSelect.value;
+            if (branchSelect) {
+                document.getElementById('summaryBranch').textContent = branchSelect.value;
+            }
+            if (dateInput) {
+                document.getElementById('summaryDate').textContent = dateInput.value || 'Not selected';
+            }
+            if (timeSelect) {
+                document.getElementById('summaryTime').textContent = timeSelect.value;
+            }
         }
 
-        serviceSelect.addEventListener('change', updateSummary);
-        branchSelect.addEventListener('change', updateSummary);
-        dateInput.addEventListener('change', updateSummary);
-        timeSelect.addEventListener('change', updateSummary);
-
         function openConfirmation() {
-            updateSummary();
+            updateSummaryFromForm();
+
+            const serviceText = document.getElementById('summaryService').textContent;
+            const dateText    = document.getElementById('summaryDate').textContent;
+            const timeText    = document.getElementById('summaryTime').textContent;
+            const branchText  = document.getElementById('summaryBranch').textContent;
+            const totalText   = document.getElementById('summaryTotal').textContent;
+
+            document.getElementById('modalService').textContent   = serviceText;
+            document.getElementById('modalDateTime').textContent  = dateText + ' • ' + timeText;
+            document.getElementById('modalBranch').textContent    = branchText;
+            document.getElementById('modalAmount').textContent    = totalText;
+
             document.getElementById('confirmationModal').classList.add('show');
         }
 
@@ -244,7 +276,14 @@
             document.getElementById('confirmationModal').classList.remove('show');
         }
 
-        // initialize once
-        updateSummary();
+        document.addEventListener('DOMContentLoaded', function () {
+            ['serviceSelect','branchSelect','dateInput','timeSelect'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', updateSummaryFromForm);
+            });
+
+            updateSummaryFromForm();
+        });
     </script>
 </x-app-layout>

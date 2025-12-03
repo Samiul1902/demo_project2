@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\Admin\ServiceAdminController;
+use App\Models\Service;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,12 +20,14 @@ use App\Http\Controllers\Admin\ServiceAdminController;
 // Home page
 Route::view('/', 'public.home')->name('home');
 
-// Services catalog & detail (now using DB + controllers)
+// Services catalog & detail (DB + controllers)
 Route::get('/services', [ServiceController::class, 'index'])->name('public.services');
 Route::get('/services/{service}', [ServiceController::class, 'show'])->name('public.service.detail');
 
-// Booking flow
-Route::view('/booking', 'public.booking')->name('public.booking');
+// Booking flow (optional service pre-selected)
+Route::get('/booking/{service?}', function (Service $service = null) {
+    return view('public.booking', compact('service'));
+})->name('public.booking');
 
 // Profile & booking history
 Route::view('/profile', 'public.profile')->name('public.profile');
