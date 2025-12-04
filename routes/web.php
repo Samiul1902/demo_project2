@@ -86,3 +86,11 @@ Route::prefix('admin')->group(function () {
     // Branch management (multi-branch FR‑16).[file:1]
     Route::view('/branches', 'admin.branches')->name('admin.branches');
 });
+
+// Cancel a booking from customer side (FR‑6).[file:1]
+Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
+    ->name('public.bookings.cancel');
+
+// Booking invoice / confirmation page (FR‑4, FR‑13).[file:1]
+Route::get('/bookings/{booking}/invoice', [BookingController::class, 'invoice'])
+    ->name('public.bookings.invoice');
