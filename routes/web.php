@@ -7,6 +7,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecommendationController;
 
 // Admin controllers
 use App\Http\Controllers\Admin\ServiceAdminController;
@@ -33,13 +34,14 @@ use App\Models\Customer;
  * Public / customer routes
  */
 
+// Home page
 Route::view('/', 'public.home')->name('home');
 
 // Services catalog & detail (FR‑2, FR‑10).[file:1]
 Route::get('/services', [ServiceController::class, 'index'])->name('public.services');
 Route::get('/services/{service}', [ServiceController::class, 'show'])->name('public.service.detail');
 
-// Booking flow – booking form with optional pre‑selected service and profile prefill (FR‑1, FR‑3).[file:1]
+// Booking form with optional pre-selected service and profile prefill (FR‑1, FR‑3).[file:1]
 Route::get('/booking/{service?}', function (Service $service = null) {
     $staffByBranch = Staff::where('status', 'Active')
         ->orderBy('branch')
@@ -59,7 +61,7 @@ Route::get('/booking/{service?}', function (Service $service = null) {
 // Store booking (FR‑3, FR‑4, FR‑5).[file:1]
 Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
 
-// Booking history & management (FR‑5, FR‑6).[file:1]
+// Booking history & cancellation (FR‑5, FR‑6).[file:1]
 Route::get('/bookings', [BookingController::class, 'index'])->name('public.bookings');
 Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
     ->name('public.bookings.cancel');
@@ -68,31 +70,39 @@ Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
 Route::get('/bookings/{booking}/invoice', [BookingController::class, 'invoice'])
     ->name('public.bookings.invoice');
 
-// Profile (FR‑1).[file:1]
+// Profile management (FR‑1).[file:1]
 Route::get('/profile', [ProfileController::class, 'edit'])->name('public.profile');
 Route::post('/profile', [ProfileController::class, 'update'])->name('public.profile.update');
 
-// Feedback (FR‑7).[file:1]
+// Feedback form + submission (FR‑7).[file:1]
 Route::view('/feedback', 'public.feedback')->name('public.feedback');
 Route::post('/feedback', [FeedbackController::class, 'store'])->name('public.feedback.store');
+
+// Simple AI-style recommendations page (FR‑17 prototype).[file:1]
+Route::get('/recommendations', [RecommendationController::class, 'index'])
+    ->name('public.recommendations');
+
+// Chatbot demo page (FR‑18 prototype).[file:1]
+Route::view('/chatbot', 'public.chatbot')->name('public.chatbot');
+
 
 /**
  * Admin routes
  */
 
 Route::prefix('admin')->group(function () {
-    // Dashboard (FR‑9).[file:1]
+    // Dashboard with KPIs (FR‑9).[file:1]
     Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
     // Services management (FR‑10).[file:1]
     Route::get('/services', [ServiceAdminController::class, 'index'])->name('admin.services');
 
-    // Staff management + schedules (FR‑11).[file:1]
+    // Staff management + schedule editing (FR‑11).[file:1]
     Route::get('/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
     Route::post('/staff/{staff}/schedule', [StaffAdminController::class, 'updateSchedule'])
         ->name('admin.staff.schedule');
 
-    // Bookings management (FR‑12, FR‑13).[file:1]
+    // Bookings management, approval, completion (FR‑12, FR‑13).[file:1]
     Route::get('/bookings', [BookingAdminController::class, 'index'])->name('admin.bookings');
     Route::post('/bookings/{booking}/approve', [BookingAdminController::class, 'approve'])
         ->name('admin.bookings.approve');
@@ -101,19 +111,19 @@ Route::prefix('admin')->group(function () {
     Route::post('/bookings/{booking}/complete', [BookingAdminController::class, 'complete'])
         ->name('admin.bookings.complete');
 
-    // Reports (FR‑14).[file:1]
+    // Reports & analytics, including loyalty points (FR‑14, FR‑15).[file:1]
     Route::get('/reports', [ReportAdminController::class, 'index'])->name('admin.reports');
 
-    // Branch management (FR‑16).[file:1]
+    // Branch management (FR‑16 multi-branch).[file:1]
     Route::get('/branches', [BranchAdminController::class, 'index'])->name('admin.branches');
     Route::post('/branches', [BranchAdminController::class, 'store'])->name('admin.branches.store');
     Route::post('/branches/{branch}', [BranchAdminController::class, 'update'])->name('admin.branches.update');
 
-    // Feedback list (FR‑7 admin).[file:1]
+    // Feedback list for admins (FR‑7 admin-side).[file:1]
     Route::get('/feedback', [FeedbackController::class, 'adminIndex'])
         ->name('admin.feedback');
 
-    // Notification log (FR‑8).[file:1]
+    // Notification log for booking events (FR‑8).[file:1]
     Route::get('/notifications', [NotificationAdminController::class, 'index'])
         ->name('admin.notifications');
 });
