@@ -17,6 +17,16 @@
                 $defaultService = isset($service) && $service
                     ? $service
                     : ($allServices->first() ?? null);
+
+                // Build a simple map: branch => [{name: 'Ayesha'}, ...] for JS.
+                $staffCollection = isset($staffByBranch) ? $staffByBranch : collect();
+                $staffMap = $staffCollection->mapWithKeys(function ($list, $branch) {
+                    return [
+                        $branch => $list->map(function ($s) {
+                            return ['name' => $s->name];
+                        })->values(),
+                    ];
+                });
             @endphp
 
             <div class="row" style="gap:2rem;">
@@ -26,7 +36,7 @@
                         <form id="bookingForm" method="POST" action="{{ route('booking.store') }}">
                             @csrf
 
-                            {{-- Customer info (simple until auth is added) --}}
+                            {{-- Customer info --}}
                             <div style="margin-bottom:0.9rem;">
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Your name *
@@ -79,16 +89,20 @@
                                 </select>
                             </div>
 
-                            {{-- Stylist --}}
+                            {{-- Stylist (from DB staff, filtered by branch via JS) --}}
                             <div style="margin-bottom:0.9rem;">
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Stylist preference
                                 </label>
                                 <select class="select" style="width:100%;" id="stylistSelect" name="stylist_preference">
-                                    <option>Any available stylist</option>
-                                    <option>Ayesha (4.8★)</option>
-                                    <option>Fahim (4.6★)</option>
-                                    <option>Nadia (4.9★)</option>
+                                    <option value="">Any available stylist</option>
+                                    @if(isset($staffByBranch))
+                                        @foreach($staffByBranch->flatten() as $stylist)
+                                            <option value="{{ $stylist->name }}">
+                                                {{ $stylist->name }} ({{ $stylist->branch }})
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
 
@@ -213,6 +227,34 @@
     </section>
 
     <script>
+        // Staff map injected from PHP (branch => [{name: ...}, ...])
+        // Wrapped in a string so the JS/TS language service does not misinterpret Blade syntax.
+        const staffByBranch = JSON.parse(`@json($staffMap)`);
+
+        function updateStylistsForBranch() {
+            const branchSelect = document.getElementById('branchSelect');
+            const stylistSelect = document.getElementById('stylistSelect');
+            if (!branchSelect || !stylistSelect) return;
+
+            // Branch select text is like "Banani Branch" -> key "Banani"
+            const raw = branchSelect.value || '';
+            const branchKey = raw.replace(' Branch', '');
+            const list = staffByBranch[branchKey] || [];
+
+            stylistSelect.innerHTML = '';
+            const anyOpt = document.createElement('option');
+            anyOpt.value = '';
+            anyOpt.textContent = 'Any available stylist';
+            stylistSelect.appendChild(anyOpt);
+
+            list.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.name;
+                opt.textContent = s.name;
+                stylistSelect.appendChild(opt);
+            });
+        }
+
         function updateSummaryFromForm() {
             const serviceSelect  = document.getElementById('serviceSelect');
             const serviceIdInput = document.getElementById('serviceIdInput');
@@ -251,9 +293,16 @@
             ['serviceSelect', 'branchSelect', 'dateInput', 'timeSelect'].forEach(function (id) {
                 const el = document.getElementById(id);
                 if (!el) return;
-                el.addEventListener('change', updateSummaryFromForm);
+                el.addEventListener('change', function () {
+                    if (id === 'branchSelect') {
+                        updateStylistsForBranch();
+                    }
+                    updateSummaryFromForm();
+                });
             });
 
+            // Initial setup
+            updateStylistsForBranch();
             updateSummaryFromForm();
         });
     </script>

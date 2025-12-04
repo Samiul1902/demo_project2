@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use Illuminate\Http\Request;
 
 class BookingAdminController extends Controller
 {
@@ -20,5 +21,48 @@ class BookingAdminController extends Controller
         return view('admin.bookings', compact('bookings'));
     }
 
-    // Later you can add methods to approve/reject/update status.
+    /**
+     * Approve a pending booking (FR‑12).[file:1]
+     */
+    public function approve(Booking $booking, Request $request)
+    {
+        if ($booking->status === 'Pending') {
+            $booking->status = 'Approved';
+            $booking->save();
+        }
+
+        return redirect()
+            ->route('admin.bookings')
+            ->with('status', 'Booking #'.$booking->id.' approved.');
+    }
+
+    /**
+     * Reject a pending booking (FR‑12).[file:1]
+     */
+    public function reject(Booking $booking, Request $request)
+    {
+        if ($booking->status === 'Pending') {
+            $booking->status = 'Rejected';
+            $booking->save();
+        }
+
+        return redirect()
+            ->route('admin.bookings')
+            ->with('status', 'Booking #'.$booking->id.' rejected.');
+    }
+
+    /**
+     * Mark a booking as completed so it can be invoiced (FR‑13).[file:1]
+     */
+    public function complete(Booking $booking, Request $request)
+    {
+        if (in_array($booking->status, ['Approved', 'Pending'])) {
+            $booking->status = 'Completed';
+            $booking->save();
+        }
+
+        return redirect()
+            ->route('admin.bookings')
+            ->with('status', 'Booking #'.$booking->id.' marked as completed.');
+    }
 }

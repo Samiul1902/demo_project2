@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ServiceAdminController;
 use App\Http\Controllers\Admin\BookingAdminController;
 use App\Http\Controllers\Admin\StaffAdminController;
 use App\Models\Service;
+use App\Models\Staff;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +32,16 @@ Route::get('/services/{service}', [ServiceController::class, 'show'])->name('pub
 // Booking flow
 // GET: booking form; optional {service} pre-selects a service (FR‑3).[file:1]
 Route::get('/booking/{service?}', function (Service $service = null) {
-    return view('public.booking', compact('service'));
+    $staffByBranch = Staff::where('status', 'Active')
+        ->orderBy('branch')
+        ->orderBy('name')
+        ->get()
+        ->groupBy('branch');
+
+    return view('public.booking', [
+        'service'       => $service,
+        'staffByBranch' => $staffByBranch,
+    ]);
 })->name('public.booking');
 
 // POST: store new booking (FR‑3, FR‑4, FR‑5).[file:1]
@@ -43,7 +53,6 @@ Route::get('/bookings', [BookingController::class, 'index'])->name('public.booki
 // Profile & feedback (UI prototypes for FR‑1, FR‑7).[file:1]
 Route::view('/profile', 'public.profile')->name('public.profile');
 Route::view('/feedback', 'public.feedback')->name('public.feedback');
-
 
 /**
  * Admin routes
@@ -62,6 +71,14 @@ Route::prefix('admin')->group(function () {
 
     // Bookings management (view all bookings, FR‑12/FR‑13).[file:1]
     Route::get('/bookings', [BookingAdminController::class, 'index'])->name('admin.bookings');
+
+    // Booking approval / status changes (FR‑12, FR‑13).[file:1]
+    Route::post('/bookings/{booking}/approve', [BookingAdminController::class, 'approve'])
+        ->name('admin.bookings.approve');
+    Route::post('/bookings/{booking}/reject', [BookingAdminController::class, 'reject'])
+        ->name('admin.bookings.reject');
+    Route::post('/bookings/{booking}/complete', [BookingAdminController::class, 'complete'])
+        ->name('admin.bookings.complete');
 
     // Reports & analytics
     Route::view('/reports', 'admin.reports')->name('admin.reports');

@@ -2,12 +2,20 @@
     <section style="padding: 2.5rem 0 3rem 0;">
         <div class="container fade-in-up">
             <h1 style="font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">
-                Bookings & approvals
+                Bookings &amp; approvals
             </h1>
-            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.6rem;">
+            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.2rem;">
                 Monitor customer appointments, approve or reject pending bookings, and track
                 completed services in line with FR‑9, FR‑12, and FR‑13.[file:1]
             </p>
+
+            {{-- Flash message --}}
+            @if(session('status'))
+                <div class="card"
+                     style="margin-bottom:1rem; font-size:0.85rem; color:#bbf7d0; border-color:rgba(34,197,94,0.4);">
+                    {{ session('status') }}
+                </div>
+            @endif
 
             {{-- Filters (UI only for now) --}}
             <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.2rem; font-size:0.85rem;">
@@ -92,16 +100,38 @@
                                 </td>
                                 <td style="text-align:right;">
                                     @if($b->status === 'Pending')
-                                        <button type="button"
-                                                class="btn glow-btn"
-                                                style="padding:0.3rem 0.7rem; font-size:0.78rem; background:#16a34a; border-color:#16a34a; color:white;">
-                                            Approve (UI)
-                                        </button>
-                                        <button type="button"
-                                                class="btn glow-btn"
-                                                style="padding:0.3rem 0.7rem; font-size:0.78rem; background:#b91c1c; border-color:#b91c1c; color:white;">
-                                            Reject (UI)
-                                        </button>
+                                        <form action="{{ route('admin.bookings.approve', $b) }}"
+                                              method="POST"
+                                              style="display:inline-block; margin-right:0.25rem;">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="btn glow-btn"
+                                                    style="padding:0.3rem 0.7rem; font-size:0.78rem; background:#16a34a; border-color:#16a34a; color:white;">
+                                                Approve
+                                            </button>
+                                        </form>
+
+                                        <form action="{{ route('admin.bookings.reject', $b) }}"
+                                              method="POST"
+                                              style="display:inline-block;">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="btn glow-btn"
+                                                    style="padding:0.3rem 0.7rem; font-size:0.78rem; background:#b91c1c; border-color:#b91c1c; color:white;">
+                                                Reject
+                                            </button>
+                                        </form>
+                                    @elseif($b->status === 'Approved')
+                                        <form action="{{ route('admin.bookings.complete', $b) }}"
+                                              method="POST"
+                                              style="display:inline-block;">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="btn glow-btn"
+                                                    style="padding:0.3rem 0.7rem; font-size:0.78rem; background:#2563eb; border-color:#2563eb; color:white;">
+                                                Mark completed
+                                            </button>
+                                        </form>
                                     @else
                                         <span style="font-size:0.78rem; color:#9ca3af;">
                                             No actions
