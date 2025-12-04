@@ -6,6 +6,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\ServiceAdminController;
 use App\Http\Controllers\Admin\BookingAdminController;
 use App\Http\Controllers\Admin\StaffAdminController;
+use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReportAdminController;
 use App\Models\Service;
 use App\Models\Staff;
@@ -51,6 +52,14 @@ Route::post('/booking', [BookingController::class, 'store'])->name('booking.stor
 // Booking history page (FR‑5, FR‑6).[file:1]
 Route::get('/bookings', [BookingController::class, 'index'])->name('public.bookings');
 
+// Cancel a booking from customer side (FR‑6).[file:1]
+Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
+    ->name('public.bookings.cancel');
+
+// Booking invoice / confirmation page (FR‑4, FR‑13).[file:1]
+Route::get('/bookings/{booking}/invoice', [BookingController::class, 'invoice'])
+    ->name('public.bookings.invoice');
+
 // Profile & feedback (UI prototypes for FR‑1, FR‑7).[file:1]
 Route::view('/profile', 'public.profile')->name('public.profile');
 Route::view('/feedback', 'public.feedback')->name('public.feedback');
@@ -61,10 +70,10 @@ Route::view('/feedback', 'public.feedback')->name('public.feedback');
  */
 
 Route::prefix('admin')->group(function () {
-    // Dashboard
-    Route::view('/dashboard', 'admin.dashboard')->name('admin.dashboard');
+    // Dashboard with KPIs (FR‑9).[file:1]
+    Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
-    // Services management (DB-backed)
+    // Services management (DB-backed, FR‑10).[file:1]
     Route::get('/services', [ServiceAdminController::class, 'index'])->name('admin.services');
 
     // Staff management (DB-backed, prepares for schedules FR‑11).[file:1]
@@ -84,15 +93,6 @@ Route::prefix('admin')->group(function () {
     // Reports & analytics (FR‑14).[file:1]
     Route::get('/reports', [ReportAdminController::class, 'index'])->name('admin.reports');
 
-
     // Branch management (multi-branch FR‑16).[file:1]
     Route::view('/branches', 'admin.branches')->name('admin.branches');
 });
-
-// Cancel a booking from customer side (FR‑6).[file:1]
-Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
-    ->name('public.bookings.cancel');
-
-// Booking invoice / confirmation page (FR‑4, FR‑13).[file:1]
-Route::get('/bookings/{booking}/invoice', [BookingController::class, 'invoice'])
-    ->name('public.bookings.invoice');
