@@ -10,17 +10,21 @@ class Booking extends Model
     use HasFactory;
 
     protected $fillable = [
-        'customer_name',
-        'customer_phone',
         'service_id',
         'branch',
-        'stylist_preference',
+        'customer_name',
+        'customer_phone',
         'date',
         'time',
-        'notes',
-        'status',
-        'total_price',
-        'loyalty_points', // new field for FR‑15/FR‑20.[file:1]
+        'status',        // Pending, Approved, Rejected, Completed, Cancelled
+        'total_price',   // FR‑4, FR‑13.[file:1]
+        'loyalty_points',
+    ];
+
+    protected $casts = [
+        'date'         => 'date',
+        'total_price'  => 'decimal:2',
+        'loyalty_points' => 'integer',
     ];
 
     public function service()
@@ -28,8 +32,8 @@ class Booking extends Model
         return $this->belongsTo(Service::class);
     }
 
-    public function feedback()
+    public function payment()
     {
-        return $this->hasMany(Feedback::class);
+        return $this->hasOne(Payment::class);
     }
 }

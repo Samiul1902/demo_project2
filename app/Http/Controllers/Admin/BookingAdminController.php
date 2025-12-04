@@ -10,13 +10,14 @@ use Illuminate\Http\Request;
 class BookingAdminController extends Controller
 {
     /**
-     * Admin view of all bookings (FR‑9, FR‑12, FR‑13).[file:1]
+     * List all bookings for admins (FR‑12).[file:1]
      */
     public function index()
     {
         $bookings = Booking::with('service')
             ->orderByDesc('date')
             ->orderByDesc('time')
+            ->limit(200)
             ->get();
 
         return view('admin.bookings', compact('bookings'));
@@ -25,72 +26,73 @@ class BookingAdminController extends Controller
     /**
      * Approve a pending booking (FR‑12).[file:1]
      */
-    public function approve(Booking $booking, Request $request)
+    public function approve(Booking $booking)
     {
-        if ($booking->status === 'Pending') {
-            $booking->status = 'Approved';
-            $booking->save();
-
-            // Log approval notification (FR‑8).[file:1]
-            NotificationLog::create([
-                'booking_id' => $booking->id,
-                'channel'    => 'SMS',
-                'type'       => 'booking_approved',
-                'recipient'  => $booking->customer_phone,
-                'message'    => "Your booking #{$booking->id} on {$booking->date} at {$booking->time} has been approved.",
-            ]);
+        if ($booking->status !== 'Pending') {
+            return back()->with('status', 'Only pending bookings can be approved.');
         }
 
-        return redirect()
-            ->route('admin.bookings')
-            ->with('status', 'Booking #'.$booking->id.' approved.');
+        $booking->status = 'Approved';
+        $booking->save();
+
+        NotificationLog::create([
+            'booking_id' => $booking->id,
+            'channel'    => 'SMS',
+            'type'       => 'booking_approved',
+            'recipient'  => $booking->customer_phone,
+            'message'    => "Your booking #{$booking->id} has been approved.",
+        ]);
+
+        return back()->with('status', 'Booking approved.');
     }
 
     /**
-     * Reject a pending booking (FR‑12).[file:1]
+     * Reject a booking (FR‑12).[file:1]
      */
-    public function reject(Booking $booking, Request $request)
+    public function reject(Booking $booking)
     {
-        if ($booking->status === 'Pending') {
-            $booking->status = 'Rejected';
-            $booking->save();
-
-            // Log rejection notification (FR‑8).[file:1]
-            NotificationLog::create([
-                'booking_id' => $booking->id,
-                'channel'    => 'SMS',
-                'type'       => 'booking_rejected',
-                'recipient'  => $booking->customer_phone,
-                'message'    => "Your booking #{$booking->id} on {$booking->date} at {$booking->time} could not be accepted. Please contact the salon.",
-            ]);
+        if (!in_array($booking->status, ['Pending', 'Approved'])) {
+            return back()->with('status', 'Only pending/approved bookings can be rejected.');
         }
 
-        return redirect()
-            ->route('admin.bookings')
-            ->with('status', 'Booking #'.$booking->id.' rejected.');
+        $booking->status = 'Rejected';
+        $booking->save();
+
+        NotificationLog::create([
+            'booking_id' => $booking->id,
+            'channel'    => 'SMS',
+            'type'       => 'booking_rejected',
+            'recipient'  => $booking->customer_phone,
+            'message'    => "Your booking #{$booking->id} has been rejected.",
+        ]);
+
+        return back()->with('status', 'Booking rejected.');
     }
 
     /**
-     * Mark a booking as completed so it can be invoiced (FR‑13).[file:1]
+     * Mark a booking as completed and issue loyalty points (FR‑13, FR‑15).[file:1]
      */
-    public function complete(Booking $booking, Request $request)
+    public function complete(Booking $booking)
     {
-        if (in_array($booking->status, ['Approved', 'Pending'])) {
-            $booking->status = 'Completed';
-            $booking->save();
-
-            // Log completion notification (FR‑8).[file:1]
-            NotificationLog::create([
-                'booking_id' => $booking->id,
-                'channel'    => 'SMS',
-                'type'       => 'booking_completed',
-                'recipient'  => $booking->customer_phone,
-                'message'    => "Thank you for visiting. Your booking #{$booking->id} has been completed.",
-            ]);
+        if ($booking->status !== 'Approved') {
+            return back()->with('status', 'Only approved bookings can be completed.');
         }
 
-        return redirect()
-            ->route('admin.bookings')
-            ->with('status', 'Booking #'.$booking->id.' marked as completed.');
+        $booking->status = 'Completed';
+
+        // Simple loyalty scheme: 1 point per 100 BDT.[file:1]
+        $points = (int) floor($booking->total_price / 100);
+        $booking->loyalty_points = $points;
+        $booking->save();
+
+        NotificationLog::create([
+            'booking_id' => $booking->id,
+            'channel'    => 'SMS',
+            'type'       => 'booking_completed',
+            'recipient'  => $booking->customer_phone,
+            'message'    => "Thank you! Booking #{$booking->id} completed. You earned {$points} loyalty points.",
+        ]);
+
+        return back()->with('status', 'Booking marked as completed.');
     }
 }

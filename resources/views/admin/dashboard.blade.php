@@ -1,131 +1,186 @@
 <x-app-layout>
-    <section style="padding: 2.5rem 0 3rem 0;">
+    <section style="padding: 2.8rem 0 3.2rem 0;">
         <div class="container fade-in-up">
-            <h1 style="font-size:1.7rem; font-weight:800; margin-bottom:0.4rem;">
-                Admin dashboard
-            </h1>
-            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
-                High-level snapshot of today&apos;s activity, revenue, and key resources, as required
-                by the admin dashboard feature (FR‑9).[file:1]
-            </p>
 
-            {{-- Top KPI cards --}}
-            <div class="row" style="gap:1rem; margin-bottom:1.2rem;">
-                <div class="card" style="flex:1 1 0; padding:0.9rem;">
-                    <div style="font-size:0.8rem; color:#9ca3af;">Today&apos;s bookings</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#e5e7eb;">
-                        {{ $todayBookings }}
-                    </div>
-                    <div style="font-size:0.8rem; color:#9ca3af; margin-top:0.2rem;">
-                        Total bookings: <span style="color:#fb7185;">{{ $totalBookings }}</span>
-                    </div>
+            {{-- Hero header --}}
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; margin-bottom:1.6rem;">
+                <div>
+                    <h1 style="font-size:1.9rem; font-weight:800; margin-bottom:0.25rem;">
+                        Salon control center
+                    </h1>
+                    <p style="font-size:0.92rem; color:#9ca3af;">
+                        Monitor today’s flow and jump into bookings, services, and staff
+                        management (FR‑9).[file:1]
+                    </p>
                 </div>
-
-                <div class="card" style="flex:1 1 0; padding:0.9rem;">
-                    <div style="font-size:0.8rem; color:#9ca3af;">Today&apos;s revenue</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#fb7185;">
-                        BDT {{ number_format($todayRevenue, 2) }}
-                    </div>
-                    <div style="font-size:0.8rem; color:#9ca3af; margin-top:0.2rem;">
-                        Total revenue: <span style="color:#4ade80;">BDT {{ number_format($totalRevenue, 2) }}</span>
-                    </div>
-                </div>
-
-                <div class="card" style="flex:1 1 0; padding:0.9rem;">
-                    <div style="font-size:0.8rem; color:#9ca3af;">Resources</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#e5e7eb;">
-                        {{ $serviceCount }} services
-                    </div>
-                    <div style="font-size:0.8rem; color:#9ca3af; margin-top:0.2rem;">
-                        Staff members: <span style="color:#60a5fa;">{{ $staffCount }}</span>
-                    </div>
+                <div style="text-align:right; font-size:0.8rem; color:#9ca3af;">
+                    <div>{{ now()->format('l, d M Y') }}</div>
+                    <div style="opacity:0.7;">Bangladesh Standard Time</div>
                 </div>
             </div>
 
-            {{-- Booking status overview + quick links --}}
-            <div class="row" style="gap:1rem; margin-bottom:1.2rem;">
-                <div class="card" style="flex:2 1 0; padding:0.9rem;">
-                    <h2 style="font-size:1rem; font-weight:700; margin-bottom:0.5rem;">
-                        Booking status overview
-                    </h2>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.9rem; font-size:0.9rem;">
-                        <div>Pending: <span style="color:#facc15; font-weight:600;">{{ $pendingCount }}</span></div>
-                        <div>Approved: <span style="color:#4ade80; font-weight:600;">{{ $approvedCount }}</span></div>
-                        <div>Completed: <span style="color:#60a5fa; font-weight:600;">{{ $completedCount }}</span></div>
-                    </div>
+            @if(session('status'))
+                <div class="card"
+                     style="margin-bottom:1.2rem; font-size:0.85rem; color:#bbf7d0; border-color:rgba(34,197,94,0.4);">
+                    {{ session('status') }}
                 </div>
+            @endif
 
-                <div class="card" style="flex:1 1 0; padding:0.9rem;">
-                    <h2 style="font-size:1rem; font-weight:700; margin-bottom:0.5rem;">
+            {{-- Glassy stat cards --}}
+            <div class="row" style="gap:1rem; margin-bottom:1.6rem;">
+                @php
+                    $cards = [
+                        [
+                            'label' => 'Today’s bookings',
+                            'value' => $kpis['today_bookings'] ?? 0,
+                        ],
+                        [
+                            'label' => 'Today’s revenue',
+                            'value' => 'BDT '.number_format($kpis['today_revenue'] ?? 0, 2),
+                        ],
+                        [
+                            'label' => 'Pending approvals',
+                            'value' => $kpis['pending_bookings'] ?? 0,
+                        ],
+                        [
+                            'label' => 'Active branches',
+                            'value' => $kpis['active_branches'] ?? 0,
+                        ],
+                    ];
+                @endphp
+
+                @foreach($cards as $card)
+                    <div class="card"
+                         style="flex:1 1 0; padding:1rem 1.1rem; background:rgba(15,23,42,0.7); backdrop-filter:blur(10px); border-color:rgba(148,163,184,0.25);">
+                        <div style="font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
+                            {{ $card['label'] }}
+                        </div>
+                        <div style="font-size:1.5rem; font-weight:700;">
+                            {{ $card['value'] }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Main two‑column layout --}}
+            <div class="row" style="gap:1.2rem; align-items:stretch;">
+
+                {{-- Management shortcuts --}}
+                <div class="card" style="flex:1 1 0; padding:1rem 1.1rem;">
+                    <h2 style="font-size:1rem; font-weight:700; margin-bottom:0.7rem;">
                         Quick actions
                     </h2>
-                    <div style="display:flex; flex-direction:column; gap:0.4rem; font-size:0.85rem;">
-                        <a href="{{ route('admin.bookings') }}" class="btn glow-btn"
-                           style="padding:0.3rem 0.7rem; text-align:left;">
-                            View all bookings
+
+                    <div style="display:flex; flex-direction:column; gap:0.55rem; font-size:0.9rem;">
+                        <a href="{{ route('admin.bookings') }}"
+                           style="display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:inherit; padding:0.55rem 0.65rem; border-radius:0.6rem; background:rgba(15,23,42,0.7);">
+                            <span>
+                                Manage bookings
+                                <span style="display:block; font-size:0.78rem; color:#9ca3af;">
+                                    Approve / reject / complete appointments (FR‑12, FR‑13).[file:1]
+                                </span>
+                            </span>
+                            <span style="font-size:0.85rem; color:#9ca3af;">➜</span>
                         </a>
-                        <a href="{{ route('admin.services') }}" class="btn glow-btn"
-                           style="padding:0.3rem 0.7rem; text-align:left;">
-                            Manage services
+
+                        <a href="{{ route('admin.services') }}"
+                           style="display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:inherit; padding:0.55rem 0.65rem; border-radius:0.6rem; background:rgba(15,23,42,0.7);">
+                            <span>
+                                Services &amp; pricing
+                                <span style="display:block; font-size:0.78rem; color:#9ca3af;">
+                                    Update catalog, durations, and prices (FR‑10).[file:1]
+                                </span>
+                            </span>
+                            <span style="font-size:0.85rem; color:#9ca3af;">➜</span>
                         </a>
-                        <a href="{{ route('admin.staff') }}" class="btn glow-btn"
-                           style="padding:0.3rem 0.7rem; text-align:left;">
-                            Manage staff &amp; schedules
+
+                        <a href="{{ route('admin.staff') }}"
+                           style="display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:inherit; padding:0.55rem 0.65rem; border-radius:0.6rem; background:rgba(15,23,42,0.7);">
+                            <span>
+                                Staff &amp; schedules
+                                <span style="display:block; font-size:0.78rem; color:#9ca3af;">
+                                    Configure stylists and availability (FR‑11).[file:1]
+                                </span>
+                            </span>
+                            <span style="font-size:0.85rem; color:#9ca3af;">➜</span>
                         </a>
-                        <a href="{{ route('admin.reports') }}" class="btn glow-btn"
-                           style="padding:0.3rem 0.7rem; text-align:left;">
-                            Open detailed reports
+
+                        <a href="{{ route('admin.branches') }}"
+                           style="display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:inherit; padding:0.55rem 0.65rem; border-radius:0.6rem; background:rgba(15,23,42,0.7);">
+                            <span>
+                                Branches
+                                <span style="display:block; font-size:0.78rem; color:#9ca3af;">
+                                    Multi‑branch configuration (FR‑16).[file:1]
+                                </span>
+                            </span>
+                            <span style="font-size:0.85rem; color:#9ca3af;">➜</span>
+                        </a>
+
+                        <a href="{{ route('admin.reports') }}"
+                           style="display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:inherit; padding:0.55rem 0.65rem; border-radius:0.6rem; background:rgba(15,23,42,0.7); margin-top:0.2rem;">
+                            <span>
+                                Reports &amp; analytics
+                                <span style="display:block; font-size:0.78rem; color:#9ca3af;">
+                                    Open detailed revenue and trend reports (FR‑14, FR‑15).[file:1]
+                                </span>
+                            </span>
+                            <span style="font-size:0.85rem; color:#9ca3af;">➜</span>
                         </a>
                     </div>
                 </div>
+
+                {{-- Recent bookings --}}
+                <div class="card" style="flex:2 1 0; overflow-x:auto; padding:1rem 1.1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                        <h2 style="font-size:1rem; font-weight:700;">
+                            Recent bookings
+                        </h2>
+                        <a href="{{ route('admin.bookings') }}"
+                           class="btn btn-ghost"
+                           style="font-size:0.8rem; padding:0.25rem 0.7rem;">
+                            View all
+                        </a>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Service</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentBookings as $b)
+                                <tr>
+                                    <td>{{ $b->id }}</td>
+                                    <td>{{ $b->service?->name ?? 'Service' }}</td>
+                                    <td>{{ $b->customer_name }}</td>
+                                    <td>{{ optional($b->date)->format('d M Y') ?? $b->date }}</td>
+                                    <td>{{ $b->time }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ strtolower($b->status) }}">
+                                            {{ $b->status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6"
+                                        style="font-size:0.85rem; color:#9ca3af; text-align:center;">
+                                        No bookings yet. When customers start booking online
+                                        (FR‑3–FR‑6), they will appear here.[file:1]
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {{-- Recent bookings (different from detailed reports) --}}
-            <div class="card" style="overflow-x:auto;">
-                <h2 style="font-size:1rem; font-weight:700; margin-bottom:0.6rem;">
-                    Recent bookings
-                </h2>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Service</th>
-                            <th>Date &amp; time</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($recentBookings as $b)
-                            @php
-                                $dt = \Carbon\Carbon::parse($b->date.' '.$b->time);
-                            @endphp
-                            <tr>
-                                <td>#{{ $b->id }}</td>
-                                <td>{{ $b->customer_name }}</td>
-                                <td>{{ $b->service?->name ?? 'Service removed' }}</td>
-                                <td>
-                                    <div style="font-size:0.85rem; color:#e5e7eb;">
-                                        {{ $dt->format('d M Y') }}
-                                    </div>
-                                    <div style="font-size:0.8rem; color:#9ca3af;">
-                                        {{ $dt->format('h:i A') }}
-                                    </div>
-                                </td>
-                                <td>{{ $b->status }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" style="font-size:0.85rem; color:#9ca3af; text-align:center;">
-                                    No bookings have been created yet. Once customers start booking,
-                                    the latest appointments will appear here for a quick overview, 
-                                    while detailed trends remain under Reports.[file:1]
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
         </div>
     </section>
 </x-app-layout>

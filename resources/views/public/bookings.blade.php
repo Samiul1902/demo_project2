@@ -5,8 +5,8 @@
                 My bookings
             </h1>
             <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
-                Review your appointments, manage cancellations, open invoices, and see
-                how many loyalty points you earn from each visit.[file:1]
+                View upcoming and past salon appointments, manage cancellations, and
+                access invoices as required by FR‑5 and FR‑6.[file:1]
             </p>
 
             @if(session('status'))
@@ -16,19 +16,6 @@
                 </div>
             @endif
 
-            @php
-                $statusBadge = function (string $status) {
-                    return match ($status) {
-                        'Pending'   => 'badge-yellow',
-                        'Approved'  => 'badge-green',
-                        'Rejected'  => 'badge-red',
-                        'Completed' => 'badge-blue',
-                        'Cancelled' => 'badge-gray',
-                        default     => 'badge-gray',
-                    };
-                };
-            @endphp
-
             <div class="card" style="overflow-x:auto;">
                 <table class="table">
                     <thead>
@@ -37,78 +24,54 @@
                             <th>Service</th>
                             <th>Branch</th>
                             <th>Date &amp; time</th>
-                            <th>Points</th>
                             <th>Status</th>
+                            <th>Total (BDT)</th>
                             <th style="text-align:right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($bookings as $b)
-                            @php
-                                $dt = \Carbon\Carbon::parse($b->date.' '.$b->time);
-                                $canCancel = in_array($b->status, ['Pending','Approved']) && $dt->isFuture();
-                            @endphp
+                        @forelse($bookings as $booking)
                             <tr>
-                                <td>#{{ $b->id }}</td>
+                                <td>#{{ $booking->id }}</td>
+                                <td>{{ $booking->service?->name ?? 'Service' }}</td>
+                                <td>{{ $booking->branch }}</td>
                                 <td>
-                                    <div style="font-size:0.85rem; color:#e5e7eb;">
-                                        {{ $b->service?->name ?? 'Service removed' }}
-                                    </div>
-                                    <div style="font-size:0.75rem; color:#9ca3af;">
-                                        {{ $b->service?->duration }} min • BDT {{ $b->service?->price }}
-                                    </div>
-                                </td>
-                                <td>{{ $b->branch }}</td>
-                                <td>
-                                    <div style="font-size:0.85rem; color:#e5e7eb;">
-                                        {{ $dt->format('d M Y') }}
-                                    </div>
-                                    <div style="font-size:0.8rem; color:#9ca3af;">
-                                        {{ $dt->format('h:i A') }}
-                                    </div>
-                                </td>
-                                <td style="font-size:0.85rem; color:#4ade80;">
-                                    {{ $b->loyalty_points }}
+                                    {{ $booking->date?->format('d M Y') ?? $booking->date }}
+                                    • {{ $booking->time }}
                                 </td>
                                 <td>
-                                    <span class="{{ $statusBadge($b->status) }}">
-                                        {{ $b->status }}
+                                    <span class="badge badge-{{ strtolower($booking->status) }}">
+                                        {{ $booking->status }}
                                     </span>
                                 </td>
+                                <td>{{ number_format($booking->total_price, 2) }}</td>
                                 <td style="text-align:right;">
-                                    @if(in_array($b->status, ['Approved','Completed']))
-                                        <a href="{{ route('public.bookings.invoice', $b) }}"
-                                           class="btn glow-btn"
-                                           style="padding:0.25rem 0.7rem; font-size:0.8rem; background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb; margin-right:0.25rem;">
-                                            View invoice
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('public.bookings.invoice', $booking) }}"
+                                       class="btn btn-ghost"
+                                       style="font-size:0.8rem; padding:0.25rem 0.6rem;">
+                                        Invoice
+                                    </a>
 
-                                    @if($canCancel)
-                                        <form action="{{ route('public.bookings.cancel', $b) }}"
-                                              method="POST"
-                                              style="display:inline-block;">
+                                    @if(in_array($booking->status, ['Pending', 'Approved']))
+                                        <form method="POST"
+                                              action="{{ route('public.bookings.cancel', $booking) }}"
+                                              style="display:inline;">
                                             @csrf
                                             <button type="submit"
-                                                    class="btn glow-btn"
-                                                    style="padding:0.25rem 0.7rem; font-size:0.8rem; background:#b91c1c; border-color:#b91c1c; color:#fff;">
+                                                    class="btn btn-outline"
+                                                    style="font-size:0.8rem; padding:0.25rem 0.6rem; margin-left:0.3rem;">
                                                 Cancel
                                             </button>
                                         </form>
-                                    @else
-                                        @if(!in_array($b->status, ['Approved','Completed']))
-                                            <span style="font-size:0.78rem; color:#9ca3af;">
-                                                No actions
-                                            </span>
-                                        @endif
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" style="font-size:0.85rem; color:#9ca3af; text-align:center;">
-                                    You do not have any bookings yet. Once you confirm an appointment,
-                                    it will appear here with its status, invoice link, and loyalty points.[file:1]
+                                <td colspan="7"
+                                    style="font-size:0.85rem; color:#9ca3af; text-align:center;">
+                                    You have no bookings yet. Use the Book page to create your
+                                    first appointment and test FR‑3, FR‑4, and FR‑5.[file:1]
                                 </td>
                             </tr>
                         @endforelse

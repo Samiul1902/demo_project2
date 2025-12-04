@@ -4,57 +4,66 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\Service;
-use App\Models\Staff;
-use Carbon\Carbon;
+use App\Models\Branch;
+use Illuminate\Support\Facades\DB;
 
 class DashboardAdminController extends Controller
 {
     /**
-     * Admin dashboard with key KPIs (FR‑9).[file:1]
+     * Admin dashboard overview (FR‑9).[file:1]
      */
     public function index()
     {
-        $today = Carbon::today();
+        $today = now()->toDateString();
 
-        // Booking counts
-        $totalBookings = Booking::count();
-        $todayBookings = Booking::whereDate('date', $today->toDateString())->count();
+        $baseToday = Booking::whereDate('date', $today);
 
-        $pendingCount   = Booking::where('status', 'Pending')->count();
-        $approvedCount  = Booking::where('status', 'Approved')->count();
-        $completedCount = Booking::where('status', 'Completed')->count();
+        $kpis = [
+            'today_bookings'   => (clone $baseToday)->count(),
+            'today_revenue'    => (clone $baseToday)
+                ->whereIn('status', ['Completed', 'Approved'])
+                ->sum('total_price'),
+            'pending_bookings' => Booking::where('status', 'Pending')->count(),
+            'active_branches'  => Branch::where('is_active', true)->count(),
+        ];
 
-        // Revenue using total_price (FR‑13/FR‑14).[file:1]
-        $totalRevenue = Booking::whereIn('status', ['Approved', 'Completed'])
-            ->sum('total_price');
-
-        $todayRevenue = Booking::whereIn('status', ['Approved', 'Completed'])
-            ->whereDate('date', $today->toDateString())
-            ->sum('total_price');
-
-        // Entity counts
-        $serviceCount = Service::count();
-        $staffCount   = Staff::count();
-
-        // Latest activity: recent bookings (most recent 5)
-        $recentBookings = Booking::with('service')
-            ->orderByDesc('date')
-            ->orderByDesc('time')
+        // Top services by count for current month (FR‑14 insight).[file:1]
+        $topServices = Booking::select(
+                'service_id',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(total_price) as revenue')
+            )
+            ->whereBetween('date', [now()->startOfMonth(), now()->endOfMonth()])
+            ->whereIn('status', ['Completed', 'Approved'])
+            ->groupBy('service_id')
+            ->with('service')
+            ->orderByDesc('count')
             ->take(5)
             ->get();
 
-        return view('admin.dashboard', compact(
-            'totalBookings',
-            'todayBookings',
-            'pendingCount',
-            'approvedCount',
-            'completedCount',
-            'totalRevenue',
-            'todayRevenue',
-            'serviceCount',
-            'staffCount',
-            'recentBookings'
-        ));
+        // Today by branch.[file:1]
+        $byBranchToday = (clone $baseToday)
+            ->select(
+                'branch',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(total_price) as revenue')
+            )
+            ->groupBy('branch')
+            ->orderByDesc('revenue')
+            ->get();
+
+        // Recent bookings list.
+        $recentBookings = Booking::with('service')
+            ->orderByDesc('date')
+            ->orderByDesc('time')
+            ->limit(10)
+            ->get();
+
+        return view('admin.dashboard', [
+            'kpis'           => $kpis,
+            'topServices'    => $topServices,
+            'byBranchToday'  => $byBranchToday,
+            'recentBookings' => $recentBookings,
+        ]);
     }
 }
