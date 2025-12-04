@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Service;
 use App\Models\Staff;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardAdminController extends Controller
@@ -16,10 +15,9 @@ class DashboardAdminController extends Controller
      */
     public function index()
     {
-        // Today range in BST-style date only
         $today = Carbon::today();
 
-        // Total counts
+        // Booking counts
         $totalBookings = Booking::count();
         $todayBookings = Booking::whereDate('date', $today->toDateString())->count();
 
@@ -27,7 +25,7 @@ class DashboardAdminController extends Controller
         $approvedCount  = Booking::where('status', 'Approved')->count();
         $completedCount = Booking::where('status', 'Completed')->count();
 
-        // Revenue (using total_price from bookings table)
+        // Revenue using total_price (FR‑13/FR‑14).[file:1]
         $totalRevenue = Booking::whereIn('status', ['Approved', 'Completed'])
             ->sum('total_price');
 
@@ -35,21 +33,16 @@ class DashboardAdminController extends Controller
             ->whereDate('date', $today->toDateString())
             ->sum('total_price');
 
-        // Simple “top services” for last 30 days
-        $thirtyDaysAgo = Carbon::now()->subDays(30)->startOfDay();
-
-        $topServices = Booking::whereIn('status', ['Approved', 'Completed'])
-            ->whereDate('date', '>=', $thirtyDaysAgo->toDateString())
-            ->select('service_id', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_price) as revenue'))
-            ->groupBy('service_id')
-            ->orderByDesc('count')
-            ->with('service')
-            ->take(5)
-            ->get();
-
-        // Basic counts for services and staff
+        // Entity counts
         $serviceCount = Service::count();
         $staffCount   = Staff::count();
+
+        // Latest activity: recent bookings (most recent 5)
+        $recentBookings = Booking::with('service')
+            ->orderByDesc('date')
+            ->orderByDesc('time')
+            ->take(5)
+            ->get();
 
         return view('admin.dashboard', compact(
             'totalBookings',
@@ -59,9 +52,9 @@ class DashboardAdminController extends Controller
             'completedCount',
             'totalRevenue',
             'todayRevenue',
-            'topServices',
             'serviceCount',
-            'staffCount'
+            'staffCount',
+            'recentBookings'
         ));
     }
 }
