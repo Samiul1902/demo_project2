@@ -10,20 +10,26 @@ class Booking extends Model
     use HasFactory;
 
     protected $fillable = [
-        'service_id',
         'customer_name',
         'customer_phone',
+        'service_id',
         'branch',
+        'stylist_preference',
         'date',
         'time',
-        'stylist_preference',
         'notes',
         'status',
         'total_price',
+        'loyalty_points', // new field for FR‑15/FR‑20.[file:1]
     ];
 
     public function service()
     {
-        return $this->belongsTo(\App\Models\Service::class);
+        return $this->belongsTo(Service::class);
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(Feedback::class);
     }
 }

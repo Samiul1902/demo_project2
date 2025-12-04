@@ -14,7 +14,6 @@ class BookingController extends Controller
      */
     public function index()
     {
-        // For now this shows all bookings; later you can filter by authenticated user.
         $bookings = Booking::with('service')
             ->orderByDesc('date')
             ->orderByDesc('time')
@@ -41,6 +40,9 @@ class BookingController extends Controller
 
         $service = Service::findOrFail($data['service_id']);
 
+        // Simple rule: earn 1 point per 100 BDT of service price (you can tweak this).[file:1]
+        $points = (int) floor($service->price / 100);
+
         $booking = Booking::create([
             'customer_name'      => $data['customer_name'],
             'customer_phone'     => $data['customer_phone'] ?? null,
@@ -50,13 +52,13 @@ class BookingController extends Controller
             'date'               => $data['date'],
             'time'               => $data['time'],
             'notes'              => $data['notes'] ?? null,
-            'status'             => 'Pending',          // Initial status; admin can approve/reject (FR‑12).[file:1]
-            'total_price'        => $service->price,    // Used on invoice and reports (FR‑4, FR‑13, FR‑14).[file:1]
+            'status'             => 'Pending',          // Admin workflow FR‑12.[file:1]
+            'total_price'        => $service->price,    // For invoices/reports FR‑4/FR‑13/FR‑14.[file:1]
+            'loyalty_points'     => $points,            // For loyalty program FR‑15/FR‑20.[file:1]
         ]);
 
-        // Later: trigger SMS/Email notification here (FR‑8).[file:1]
+        // Later: send SMS/Email notification here (FR‑8).[file:1]
 
-        // After creating, go straight to confirmation/invoice page (FR‑4).[file:1]
         return redirect()->route('public.bookings.invoice', $booking);
     }
 
@@ -75,8 +77,6 @@ class BookingController extends Controller
      */
     public function cancel(Booking $booking, Request $request)
     {
-        // Simple rule: only pending or approved bookings that are still in the future
-        // can be cancelled. You can later enforce a 24‑hour window as per OR‑10.[file:1]
         $bookingDateTime = Carbon::parse($booking->date . ' ' . $booking->time);
 
         if (in_array($booking->status, ['Pending', 'Approved']) &&

@@ -6,7 +6,8 @@
             </h1>
             <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
                 This is your digital invoice for the appointment, fulfilling the confirmation
-                and invoicing requirements (FR‑4, FR‑13).[file:1]
+                and invoicing requirements (FR‑4, FR‑13) and showing loyalty points earned
+                as part of FR‑15/FR‑20.[file:1]
             </p>
 
             <div class="card" style="margin-bottom:1.2rem;">
@@ -59,7 +60,7 @@
                                 {{ $booking->service?->duration }} min
                             </td>
                             <td style="padding:0.4rem 0; color:#e5e7eb; text-align:right;">
-                                {{ $booking->total_price }}
+                                {{ number_format($booking->total_price, 2) }}
                             </td>
                         </tr>
                     </tbody>
@@ -69,21 +70,31 @@
 
                 <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
                     <span style="color:#9ca3af;">Subtotal</span>
-                    <span style="color:#e5e7eb;">BDT {{ $booking->total_price }}</span>
+                    <span style="color:#e5e7eb;">BDT {{ number_format($booking->total_price, 2) }}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:0.15rem;">
-                    <span style="color:#9ca3af;">Discount / loyalty</span>
-                    <span style="color:#22c55e;">BDT 0</span>
+                    <span style="color:#9ca3af;">Discount / loyalty redeemed</span>
+                    <span style="color:#22c55e;">BDT 0.00</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:1rem; font-weight:700; margin-top:0.4rem;">
                     <span>Total</span>
-                    <span style="color:#fb7185;">BDT {{ $booking->total_price }}</span>
+                    <span style="color:#fb7185;">BDT {{ number_format($booking->total_price, 2) }}</span>
+                </div>
+
+                <div style="margin-top:0.7rem; padding:0.6rem 0.7rem; border-radius:0.75rem; background:#020617; border:1px dashed rgba(74,222,128,0.5);">
+                    <div style="font-size:0.85rem; color:#4ade80; font-weight:600;">
+                        Loyalty points earned: {{ $booking->loyalty_points }}
+                    </div>
+                    <div style="font-size:0.78rem; color:#9ca3af; margin-top:0.2rem;">
+                        Points are calculated from the service price and can be used later in the
+                        membership program described in FR‑15 and FR‑20.[file:1]
+                    </div>
                 </div>
 
                 <p style="font-size:0.8rem; color:#9ca3af; margin-top:0.7rem;">
                     Status: <span style="color:#e5e7eb; font-weight:600;">{{ $booking->status }}</span>.
-                    Once the service is marked as completed by the salon, this invoice can be used for
-                    reporting and revenue analysis (FR‑13/FR‑14).[file:1]
+                    Once the service is marked as completed by the salon, this invoice will be
+                    included in admin revenue and performance reports.[file:1]
                 </p>
             </div>
 

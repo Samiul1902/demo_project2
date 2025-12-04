@@ -5,11 +5,10 @@
                 My bookings
             </h1>
             <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
-                Review your past and upcoming appointments, see service details, cancel
-                future bookings, and open digital invoices.[file:1]
+                Review your appointments, manage cancellations, open invoices, and see
+                how many loyalty points you earn from each visit.[file:1]
             </p>
 
-            {{-- Flash message --}}
             @if(session('status'))
                 <div class="card"
                      style="margin-bottom:1rem; font-size:0.85rem; color:#bbf7d0; border-color:rgba(34,197,94,0.4);">
@@ -38,6 +37,7 @@
                             <th>Service</th>
                             <th>Branch</th>
                             <th>Date &amp; time</th>
+                            <th>Points</th>
                             <th>Status</th>
                             <th style="text-align:right;">Actions</th>
                         </tr>
@@ -66,6 +66,9 @@
                                     <div style="font-size:0.8rem; color:#9ca3af;">
                                         {{ $dt->format('h:i A') }}
                                     </div>
+                                </td>
+                                <td style="font-size:0.85rem; color:#4ade80;">
+                                    {{ $b->loyalty_points }}
                                 </td>
                                 <td>
                                     <span class="{{ $statusBadge($b->status) }}">
@@ -103,9 +106,9 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" style="font-size:0.85rem; color:#9ca3af; text-align:center;">
+                                <td colspan="7" style="font-size:0.85rem; color:#9ca3af; text-align:center;">
                                     You do not have any bookings yet. Once you confirm an appointment,
-                                    it will appear here with its current status.[file:1]
+                                    it will appear here with its status, invoice link, and loyalty points.[file:1]
                                 </td>
                             </tr>
                         @endforelse
