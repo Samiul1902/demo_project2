@@ -2,163 +2,136 @@
     <section style="padding: 2.5rem 0 3rem 0;">
         <div class="container fade-in-up">
             <h1 style="font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">
-                Branches &amp; locations
+                Branch management
             </h1>
-            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.6rem;">
-                Manage salon branches for multi‑branch operations. Later these records will
-                link to services, staff, and bookings to fulfil FR‑16.[file:1]
+            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
+                Configure salon branches for multi-location operations, supporting the
+                multi-branch requirement (FR‑16).[file:1]
             </p>
 
-            {{-- Top bar --}}
-            <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-                <div style="flex:1 1 220px;">
-                    <input type="text"
-                           placeholder="Search branches..."
-                           style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
+            @if(session('status'))
+                <div class="card"
+                     style="margin-bottom:1rem; font-size:0.85rem; color:#bbf7d0; border-color:rgba(34,197,94,0.4);">
+                    {{ session('status') }}
                 </div>
-                <button type="button" class="btn btn-pink glow-btn" onclick="openBranchModal('add')">
-                    + Add branch
-                </button>
+            @endif
+
+            {{-- Add new branch --}}
+            <div class="card" style="margin-bottom:1.2rem;">
+                <h2 style="font-size:1rem; font-weight:700; margin-bottom:0.6rem;">
+                    Add new branch
+                </h2>
+                <form method="POST" action="{{ route('admin.branches.store') }}">
+                    @csrf
+                    <div class="row" style="gap:0.8rem; margin-bottom:0.6rem;">
+                        <div style="flex:1 1 0;">
+                            <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
+                                Name
+                            </label>
+                            <input type="text" name="name"
+                                   style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.4rem 0.7rem; font-size:0.85rem;"
+                                   placeholder="e.g., Banani Branch" required>
+                        </div>
+                        <div style="flex:0 0 9rem;">
+                            <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
+                                Code
+                            </label>
+                            <input type="text" name="code"
+                                   style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.4rem 0.7rem; font-size:0.85rem;"
+                                   placeholder="BANANI" required>
+                        </div>
+                    </div>
+                    <div class="row" style="gap:0.8rem; margin-bottom:0.7rem;">
+                        <div style="flex:1 1 0;">
+                            <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
+                                Address
+                            </label>
+                            <input type="text" name="address"
+                                   style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.4rem 0.7rem; font-size:0.85rem;">
+                        </div>
+                        <div style="flex:0 0 12rem;">
+                            <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
+                                Phone
+                            </label>
+                            <input type="text" name="phone"
+                                   style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.4rem 0.7rem; font-size:0.85rem;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-pink glow-btn">
+                        Create branch
+                    </button>
+                </form>
             </div>
 
-            @php
-                $branches = [
-                    ['name' => 'Banani Branch',    'address' => 'Banani, Dhaka',    'phone' => '+8801XXXXXXXX1', 'hours' => '10:00–20:00', 'status' => 'Active'],
-                    ['name' => 'Dhanmondi Branch', 'address' => 'Dhanmondi, Dhaka', 'phone' => '+8801XXXXXXXX2', 'hours' => '10:00–21:00', 'status' => 'Active'],
-                    ['name' => 'Gulshan Branch',   'address' => 'Gulshan, Dhaka',   'phone' => '+8801XXXXXXXX3', 'hours' => '11:00–20:00', 'status' => 'Planned'],
-                ];
-            @endphp
-
-            <div class="card">
+            {{-- Existing branches --}}
+            <div class="card" style="overflow-x:auto;">
+                <h2 style="font-size:1rem; font-weight:700; margin-bottom:0.6rem;">
+                    Existing branches
+                </h2>
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Branch</th>
+                            <th>Name</th>
+                            <th>Code</th>
                             <th>Address</th>
                             <th>Phone</th>
-                            <th>Hours</th>
                             <th>Status</th>
                             <th style="text-align:right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($branches as $br)
-                            @php
-                                $statusClass = $br['status'] === 'Active' ? 'badge-green' : 'badge-pink';
-                            @endphp
+                        @forelse($branches as $b)
                             <tr>
-                                <td>{{ $br['name'] }}</td>
-                                <td>{{ $br['address'] }}</td>
-                                <td>{{ $br['phone'] }}</td>
-                                <td>{{ $br['hours'] }}</td>
-                                <td>
-                                    <span class="{{ $statusClass }}">{{ $br['status'] }}</span>
-                                </td>
-                                <td style="text-align:right;">
-                                    <button type="button"
-                                            class="btn glow-btn"
-                                            style="padding:0.3rem 0.7rem; font-size:0.8rem; background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;"
-                                            data-branch-name="{{ $br['name'] }}"
-                                            onclick="openBranchModal('edit', this)">
-                                        Edit
-                                    </button>
+                                <form method="POST" action="{{ route('admin.branches.update', $b) }}">
+                                    @csrf
+                                    <td>
+                                        <input type="text" name="name"
+                                               value="{{ $b->name }}"
+                                               style="width:100%; background:#020617; border-radius:0.5rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.25rem 0.5rem; font-size:0.8rem;">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="code"
+                                               value="{{ $b->code }}"
+                                               style="width:7rem; background:#020617; border-radius:0.5rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.25rem 0.5rem; font-size:0.8rem;">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="address"
+                                               value="{{ $b->address }}"
+                                               style="width:100%; background:#020617; border-radius:0.5rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.25rem 0.5rem; font-size:0.8rem;">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="phone"
+                                               value="{{ $b->phone }}"
+                                               style="width:9rem; background:#020617; border-radius:0.5rem; border:1px solid rgba(148,163,184,0.6); color:#e5e7eb; padding:0.25rem 0.5rem; font-size:0.8rem;">
+                                    </td>
+                                    <td>
+                                        <select name="is_active"
+                                                class="select"
+                                                style="width:6.5rem; font-size:0.8rem;">
+                                            <option value="1" {{ $b->is_active ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ !$b->is_active ? 'selected' : '' }}>Inactive</option>
+                                        </select>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <button type="submit"
+                                                class="btn glow-btn"
+                                                style="padding:0.25rem 0.7rem; font-size:0.8rem;">
+                                            Save
+                                        </button>
+                                    </td>
+                                </form>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" style="font-size:0.85rem; color:#9ca3af; text-align:center;">
+                                    No branches defined yet. Use the form above to add your first
+                                    salon location and enable multi-branch reporting (FR‑16).[file:1]
                                 </td>
                             </tr>
-                        @endforeach
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
     </section>
-
-    {{-- Add/Edit branch modal --}}
-    <div id="branchModal" class="modal-backdrop">
-        <div class="modal-card fade-in-up">
-            <h2 id="branchModalTitle" style="font-size:1.2rem; font-weight:800; margin-bottom:0.6rem;">
-                Add branch
-            </h2>
-
-            <form>
-                <div style="margin-bottom:0.7rem;">
-                    <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
-                        Branch name *
-                    </label>
-                    <input type="text"
-                           id="branchNameInput"
-                           style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
-                </div>
-
-                <div style="margin-bottom:0.7rem;">
-                    <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
-                        Address *
-                    </label>
-                    <input type="text"
-                           style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
-                </div>
-
-                <div class="row" style="gap:0.7rem; margin-bottom:0.7rem;">
-                    <div style="flex:1 1 0;">
-                        <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
-                            Phone *
-                        </label>
-                        <input type="text"
-                               style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
-                    </div>
-                    <div style="flex:1 1 0;">
-                        <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
-                            Hours *
-                        </label>
-                        <input type="text"
-                               placeholder="e.g., 10:00–20:00"
-                               style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
-                    </div>
-                </div>
-
-                <div style="margin-bottom:0.7rem;">
-                    <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.2rem;">
-                        Status
-                    </label>
-                    <select class="select" style="width:100%;">
-                        <option>Active</option>
-                        <option>Planned</option>
-                        <option>Closed</option>
-                    </select>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
-                    <button type="button"
-                            class="btn glow-btn"
-                            style="background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;"
-                            onclick="closeBranchModal()">
-                        Cancel
-                    </button>
-                    <button type="button" class="btn btn-pink glow-btn">
-                        Save (UI only)
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function openBranchModal(mode = 'add', button = null) {
-            const modal = document.getElementById('branchModal');
-            const title = document.getElementById('branchModalTitle');
-            const nameInput = document.getElementById('branchNameInput');
-
-            if (mode === 'edit' && button) {
-                const branchName = button.getAttribute('data-branch-name') || '';
-                title.textContent = 'Edit branch';
-                nameInput.value = branchName;
-            } else {
-                title.textContent = 'Add branch';
-                nameInput.value = '';
-            }
-            modal.classList.add('show');
-        }
-
-        function closeBranchModal() {
-            document.getElementById('branchModal').classList.remove('show');
-        }
-    </script>
 </x-app-layout>
