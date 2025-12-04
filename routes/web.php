@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\Admin\ServiceAdminController;
 use App\Http\Controllers\Admin\BookingAdminController;
 use App\Http\Controllers\Admin\StaffAdminController;
@@ -17,7 +18,7 @@ use App\Models\Staff;
 |--------------------------------------------------------------------------
 | Frontend and admin routes for the SSBP-RMS.
 | They cover browsing services, booking appointments, viewing history,
-| and admin management of services, staff, and bookings as per the SRS.[file:1]
+| feedback, and admin management as per the SRS.[file:1]
 */
 
 /**
@@ -60,29 +61,30 @@ Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])
 Route::get('/bookings/{booking}/invoice', [BookingController::class, 'invoice'])
     ->name('public.bookings.invoice');
 
-// Profile & feedback (UI prototypes for FR‑1, FR‑7).[file:1]
+// Profile (prototype for FR‑1).[file:1]
 Route::view('/profile', 'public.profile')->name('public.profile');
+
+// Feedback: show page + submit (FR‑7).[file:1]
 Route::view('/feedback', 'public.feedback')->name('public.feedback');
+Route::post('/feedback', [FeedbackController::class, 'store'])->name('public.feedback.store');
 
 /**
  * Admin routes
- * Dashboard, services, staff, bookings, reports, branches (FR‑9–FR‑16).[file:1]
+ * Dashboard, services, staff, bookings, reports, branches, feedback (FR‑9–FR‑16, FR‑7).[file:1]
  */
 
 Route::prefix('admin')->group(function () {
     // Dashboard with KPIs (FR‑9).[file:1]
     Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
-    // Services management (DB-backed, FR‑10).[file:1]
+    // Services management (FR‑10).[file:1]
     Route::get('/services', [ServiceAdminController::class, 'index'])->name('admin.services');
 
-    // Staff management (DB-backed, prepares for schedules FR‑11).[file:1]
+    // Staff management (FR‑11).[file:1]
     Route::get('/staff', [StaffAdminController::class, 'index'])->name('admin.staff');
 
-    // Bookings management (view all bookings, FR‑12/FR‑13).[file:1]
+    // Bookings management (FR‑12/FR‑13).[file:1]
     Route::get('/bookings', [BookingAdminController::class, 'index'])->name('admin.bookings');
-
-    // Booking approval / status changes (FR‑12, FR‑13).[file:1]
     Route::post('/bookings/{booking}/approve', [BookingAdminController::class, 'approve'])
         ->name('admin.bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingAdminController::class, 'reject'])
@@ -93,6 +95,9 @@ Route::prefix('admin')->group(function () {
     // Reports & analytics (FR‑14).[file:1]
     Route::get('/reports', [ReportAdminController::class, 'index'])->name('admin.reports');
 
-    // Branch management (multi-branch FR‑16).[file:1]
+    // Branch management (FR‑16).[file:1]
     Route::view('/branches', 'admin.branches')->name('admin.branches');
+
+    // Feedback list for admins (FR‑7 admin side).[file:1]
+    Route::get('/feedback', [FeedbackController::class, 'adminIndex'])->name('admin.feedback');
 });
