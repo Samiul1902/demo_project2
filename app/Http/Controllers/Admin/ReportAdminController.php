@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class ReportAdminController extends Controller
 {
     /**
-     * Basic revenue and booking reports (FR‑14).[file:1]
+     * Basic revenue, booking, and loyalty reports (FR‑14, FR‑15).[file:1]
      */
     public function index()
     {
@@ -18,11 +18,19 @@ class ReportAdminController extends Controller
         $totalRevenue = Booking::whereIn('status', ['Approved', 'Completed'])
             ->sum('total_price');
 
-        $totalBookings = Booking::count();
-        $pendingCount  = Booking::where('status', 'Pending')->count();
-        $approvedCount = Booking::where('status', 'Approved')->count();
-        $completedCount= Booking::where('status', 'Completed')->count();
-        $cancelledCount= Booking::where('status', 'Cancelled')->count();
+        $totalBookings   = Booking::count();
+        $pendingCount    = Booking::where('status', 'Pending')->count();
+        $approvedCount   = Booking::where('status', 'Approved')->count();
+        $completedCount  = Booking::where('status', 'Completed')->count();
+        $cancelledCount  = Booking::where('status', 'Cancelled')->count();
+
+        // Loyalty: total points issued across all bookings (FR‑15/FR‑20).[file:1]
+        $totalLoyaltyPoints = Booking::sum('loyalty_points');
+
+        // Loyalty: points issued in the current month
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $monthlyLoyaltyPoints = Booking::whereDate('date', '>=', $startOfMonth->toDateString())
+            ->sum('loyalty_points');
 
         // Revenue by branch
         $revenueByBranch = Booking::whereIn('status', ['Approved', 'Completed'])
@@ -31,7 +39,7 @@ class ReportAdminController extends Controller
             ->orderByDesc('revenue')
             ->get();
 
-        // Revenue for last 7 days (for a simple trend)
+        // Revenue for last 7 days (trend)
         $sevenDaysAgo = Carbon::now()->subDays(6)->startOfDay();
 
         $dailyRevenue = Booking::whereIn('status', ['Approved', 'Completed'])
@@ -48,6 +56,8 @@ class ReportAdminController extends Controller
             'approvedCount',
             'completedCount',
             'cancelledCount',
+            'totalLoyaltyPoints',
+            'monthlyLoyaltyPoints',
             'revenueByBranch',
             'dailyRevenue'
         ));

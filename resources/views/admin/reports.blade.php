@@ -5,8 +5,8 @@
                 Reports &amp; analytics
             </h1>
             <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
-                Daily booking and revenue insights to help salon owners understand sales,
-                customer demand, and branch performance as required by FR‑14.[file:1]
+                Revenue, booking trends, and loyalty points to help salon owners track performance
+                across branches as required by FR‑14 and the loyalty program in FR‑15.[file:1]
             </p>
 
             {{-- Top summary cards --}}
@@ -24,9 +24,12 @@
                     </div>
                 </div>
                 <div class="card" style="flex:1 1 0; padding:0.9rem;">
-                    <div style="font-size:0.8rem; color:#9ca3af;">Completed services</div>
-                    <div style="font-size:1.3rem; font-weight:700; color:#22c55e;">
-                        {{ $completedCount }}
+                    <div style="font-size:0.8rem; color:#9ca3af;">Loyalty points (all time)</div>
+                    <div style="font-size:1.3rem; font-weight:700; color:#4ade80;">
+                        {{ $totalLoyaltyPoints }}
+                    </div>
+                    <div style="font-size:0.8rem; color:#9ca3af; margin-top:0.2rem;">
+                        This month: <span style="color:#22c55e;">{{ $monthlyLoyaltyPoints }}</span>
                     </div>
                 </div>
             </div>
