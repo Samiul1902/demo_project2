@@ -4,9 +4,9 @@
             <h1 style="font-size:1.8rem; font-weight:800; margin-bottom:0.4rem;">
                 Book an appointment
             </h1>
-            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.8rem;">
+            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
                 Choose your service, branch, stylist, date and time to confirm your booking.
-                Later this flow will create real appointments and invoices as described in FR‑3 and FR‑4.[file:1]
+                Your profile details are used to prefill this form when available (FR‑1, FR‑3).[file:1]
             </p>
 
             @php
@@ -27,7 +27,20 @@
                         })->values(),
                     ];
                 });
+
+                $currentCustomer = $customer ?? null;
+                $prefBranch = old('branch', $currentCustomer->preferred_branch ?? 'Banani Branch');
             @endphp
+
+            {{-- Small hint if profile is missing --}}
+            @if(!$currentCustomer)
+                <div class="card" style="margin-bottom:1rem; font-size:0.85rem; color:#9ca3af;">
+                    For faster booking next time, you can save your details in
+                    <a href="{{ route('public.profile') }}" style="color:#fb7185; text-decoration:underline;">
+                        My profile
+                    </a> (FR‑1).[file:1]
+                </div>
+            @endif
 
             <div class="row" style="gap:2rem;">
                 {{-- Left: booking form --}}
@@ -43,6 +56,7 @@
                                 </label>
                                 <input type="text"
                                        name="customer_name"
+                                       value="{{ old('customer_name', $currentCustomer->name ?? '') }}"
                                        required
                                        style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
                             </div>
@@ -53,6 +67,7 @@
                                 </label>
                                 <input type="text"
                                        name="customer_phone"
+                                       value="{{ old('customer_phone', $currentCustomer->phone ?? '') }}"
                                        style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
                             </div>
 
@@ -83,9 +98,9 @@
                                     Branch *
                                 </label>
                                 <select class="select" style="width:100%;" id="branchSelect" name="branch">
-                                    <option>Banani Branch</option>
-                                    <option>Dhanmondi Branch</option>
-                                    <option>Gulshan Branch</option>
+                                    <option {{ $prefBranch === 'Banani Branch' ? 'selected' : '' }}>Banani Branch</option>
+                                    <option {{ $prefBranch === 'Dhanmondi Branch' ? 'selected' : '' }}>Dhanmondi Branch</option>
+                                    <option {{ $prefBranch === 'Gulshan Branch' ? 'selected' : '' }}>Gulshan Branch</option>
                                 </select>
                             </div>
 
@@ -98,7 +113,8 @@
                                     <option value="">Any available stylist</option>
                                     @if(isset($staffByBranch))
                                         @foreach($staffByBranch->flatten() as $stylist)
-                                            <option value="{{ $stylist->name }}">
+                                            <option value="{{ $stylist->name }}"
+                                                    {{ old('stylist_preference', $currentCustomer->preferred_stylist ?? '') === $stylist->name ? 'selected' : '' }}>
                                                 {{ $stylist->name }} ({{ $stylist->branch }})
                                             </option>
                                         @endforeach
@@ -115,6 +131,7 @@
                                     <input type="date"
                                            id="dateInput"
                                            name="date"
+                                           value="{{ old('date') }}"
                                            required
                                            style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
                                 </div>
@@ -123,11 +140,14 @@
                                         Time *
                                     </label>
                                     <select class="select" style="width:100%;" id="timeSelect" name="time" required>
-                                        <option>10:00 AM</option>
-                                        <option>11:30 AM</option>
-                                        <option>3:30 PM</option>
-                                        <option>4:15 PM</option>
-                                        <option>5:00 PM</option>
+                                        @php
+                                            $timeOld = old('time', '10:00 AM');
+                                        @endphp
+                                        <option {{ $timeOld === '10:00 AM' ? 'selected' : '' }}>10:00 AM</option>
+                                        <option {{ $timeOld === '11:30 AM' ? 'selected' : '' }}>11:30 AM</option>
+                                        <option {{ $timeOld === '3:30 PM' ? 'selected' : '' }}>3:30 PM</option>
+                                        <option {{ $timeOld === '4:15 PM' ? 'selected' : '' }}>4:15 PM</option>
+                                        <option {{ $timeOld === '5:00 PM' ? 'selected' : '' }}>5:00 PM</option>
                                     </select>
                                 </div>
                             </div>
@@ -141,7 +161,7 @@
                                           name="notes"
                                           rows="3"
                                           style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.55rem 0.8rem; font-size:0.85rem; resize:vertical;"
-                                          placeholder="Any specific preferences or instructions?"></textarea>
+                                          placeholder="Any specific preferences or instructions?">{{ old('notes') }}</textarea>
                             </div>
 
                             <button type="submit"
@@ -178,7 +198,7 @@
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Branch</span>
-                            <span id="summaryBranch">Banani Branch</span>
+                            <span id="summaryBranch">{{ $prefBranch }}</span>
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Date</span>
@@ -186,7 +206,7 @@
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.6rem; display:flex; justify-content:space-between;">
                             <span>Time</span>
-                            <span id="summaryTime">10:00 AM</span>
+                            <span id="summaryTime">{{ $timeOld }}</span>
                         </div>
 
                         <hr style="border-color:rgba(148,163,184,0.25); margin:0.9rem 0;">
@@ -217,8 +237,8 @@
                         </div>
 
                         <p style="font-size:0.8rem; color:#9ca3af; margin-top:0.75rem;">
-                            You will earn <span style="color:#4ade80; font-weight:600;">loyalty points</span> for this booking,
-                            which can be used in the membership system defined in the requirements (FR‑15/FR‑20).[file:1]
+                            You will earn loyalty points for this booking, which connect to the
+                            membership system described in the requirements (FR‑15/FR‑20).[file:1]
                         </p>
                     </div>
                 </div>
