@@ -19,6 +19,7 @@ class Booking extends Model
         'stylist_preference',
         'notes',
         'status',
+        'total_price',
     ];
 
     public function service()

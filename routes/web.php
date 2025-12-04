@@ -6,6 +6,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\ServiceAdminController;
 use App\Http\Controllers\Admin\BookingAdminController;
 use App\Http\Controllers\Admin\StaffAdminController;
+use App\Http\Controllers\Admin\ReportAdminController;
 use App\Models\Service;
 use App\Models\Staff;
 
@@ -80,8 +81,9 @@ Route::prefix('admin')->group(function () {
     Route::post('/bookings/{booking}/complete', [BookingAdminController::class, 'complete'])
         ->name('admin.bookings.complete');
 
-    // Reports & analytics
-    Route::view('/reports', 'admin.reports')->name('admin.reports');
+    // Reports & analytics (FR‑14).[file:1]
+    Route::get('/reports', [ReportAdminController::class, 'index'])->name('admin.reports');
+
 
     // Branch management (multi-branch FR‑16).[file:1]
     Route::view('/branches', 'admin.branches')->name('admin.branches');
