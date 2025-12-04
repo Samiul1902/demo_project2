@@ -7,135 +7,31 @@ use App\Models\Service;
 
 class ServiceSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * Seeds the core salon services so users can browse services and pricing
-     * (FR‑2) and admins can manage them from the admin panel (FR‑10).[file:1]
-     */
     public function run(): void
     {
-        // Because bookings has a FK to services, use delete() not truncate().
-        // DELETE respects ON DELETE CASCADE defined in the bookings migration.
         Service::query()->delete();
 
         Service::insert([
-            // Hair services
             [
-                'name'        => 'Premium Haircut',
-                'category'    => 'Hair',
-                'duration'    => 45,
-                'price'       => 800,
-                'branch'      => 'Banani',
-                'status'      => 'Active',
-                'description' => 'Personalized haircut with style consultation.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-            [
-                'name'        => 'Basic Haircut',
-                'category'    => 'Hair',
-                'duration'    => 30,
+                'name'        => 'Classic Haircut',
+                'description' => 'Standard men’s haircut and styling.',
                 'price'       => 500,
-                'branch'      => 'Dhanmondi',
+                'duration'    => 30,
                 'status'      => 'Active',
-                'description' => 'Quick trim and simple styling for regular maintenance.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
             ],
-            [
-                'name'        => 'Hair Color (Full)',
-                'category'    => 'Hair',
-                'duration'    => 120,
-                'price'       => 3500,
-                'branch'      => 'Gulshan',
-                'status'      => 'Active',
-                'description' => 'Full-head hair coloring with premium products.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-            [
-                'name'        => 'Hair Spa',
-                'category'    => 'Spa',
-                'duration'    => 90,
-                'price'       => 1500,
-                'branch'      => 'Banani',
-                'status'      => 'Active',
-                'description' => 'Deep conditioning hair spa with relaxing head massage.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-
-            // Skin / facial
-            [
-                'name'        => 'Facial Treatment',
-                'category'    => 'Skin',
-                'duration'    => 60,
-                'price'       => 1200,
-                'branch'      => 'Dhanmondi',
-                'status'      => 'Active',
-                'description' => 'Deep cleansing facial with steam and mask.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-            [
-                'name'        => 'Detox Facial',
-                'category'    => 'Skin',
-                'duration'    => 75,
-                'price'       => 1800,
-                'branch'      => 'Gulshan',
-                'status'      => 'Active',
-                'description' => 'Detoxifying facial for dull and tired skin.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-
-            // Makeup & bridal
             [
                 'name'        => 'Bridal Makeup',
-                'category'    => 'Makeup',
+                'description' => 'Full bridal makeup package.',
+                'price'       => 4000,
                 'duration'    => 120,
-                'price'       => 5000,
-                'branch'      => 'Gulshan',
                 'status'      => 'Active',
-                'description' => 'Full bridal makeup with trial session and hair styling.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
             ],
             [
-                'name'        => 'Party Makeup',
-                'category'    => 'Makeup',
+                'name'        => 'Facial & Skin Care',
+                'description' => 'Deep cleansing facial with mask.',
+                'price'       => 1500,
                 'duration'    => 60,
-                'price'       => 2200,
-                'branch'      => 'Banani',
                 'status'      => 'Active',
-                'description' => 'Glam party look including basic hair styling.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-
-            // Spa & packages
-            [
-                'name'        => 'Body Spa & Massage',
-                'category'    => 'Spa',
-                'duration'    => 90,
-                'price'       => 2800,
-                'branch'      => 'Dhanmondi',
-                'status'      => 'Active',
-                'description' => 'Full body spa and aroma oil massage.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ],
-            [
-                'name'        => 'Bridal Package (Day)',
-                'category'    => 'Package',
-                'duration'    => 240,
-                'price'       => 8500,
-                'branch'      => 'Gulshan',
-                'status'      => 'Active',
-                'description' => 'Includes facial, hair spa, bridal makeup and basic manicure.',
-                'created_at'  => now(),
-                'updated_at'  => now(),
             ],
         ]);
     }

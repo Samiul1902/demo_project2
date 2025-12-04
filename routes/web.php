@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReportAdminController;
 use App\Http\Controllers\Admin\NotificationAdminController;
 use App\Http\Controllers\Admin\BranchAdminController;
+use App\Http\Controllers\Admin\AuthAdminController;
 
 // Models used in route closures
 use App\Models\Service;
@@ -86,12 +87,9 @@ Route::get('/recommendations', [RecommendationController::class, 'index'])
 // Chatbot demo page (FR‑18 prototype).[file:1]
 Route::view('/chatbot', 'public.chatbot')->name('public.chatbot');
 
-// SSLCommerz payment integration (FR‑22)
-// Start payment for a booking.
+// SSLCommerz payment integration (FR‑22).[web:15]
 Route::post('/payment/sslcommerz/start/{booking}', [PaymentController::class, 'start'])
     ->name('payment.sslcommerz.start');
-
-// Callback URLs configured in SSLCommerz dashboard.[web:15]
 Route::post('/payment/sslcommerz/success', [PaymentController::class, 'success'])
     ->name('payment.sslcommerz.success');
 Route::post('/payment/sslcommerz/fail', [PaymentController::class, 'fail'])
@@ -101,7 +99,19 @@ Route::post('/payment/sslcommerz/cancel', [PaymentController::class, 'cancel'])
 
 
 /**
- * Admin routes
+ * Admin auth routes (login form still available, no middleware).[file:1]
+ */
+
+Route::get('/admin/login', [AuthAdminController::class, 'showLoginForm'])
+    ->name('admin.login.form');
+Route::post('/admin/login', [AuthAdminController::class, 'login'])
+    ->name('admin.login.submit');
+Route::post('/admin/logout', [AuthAdminController::class, 'logout'])
+    ->name('admin.logout');
+
+
+/**
+ * Admin routes (NO 'admin' middleware at all)
  */
 
 Route::prefix('admin')->group(function () {
@@ -125,10 +135,10 @@ Route::prefix('admin')->group(function () {
     Route::post('/bookings/{booking}/complete', [BookingAdminController::class, 'complete'])
         ->name('admin.bookings.complete');
 
-    // Reports & analytics, including loyalty points (FR‑14, FR‑15).[file:1]
+    // Reports & analytics (FR‑14, FR‑15).[file:1]
     Route::get('/reports', [ReportAdminController::class, 'index'])->name('admin.reports');
 
-    // Branch management (FR‑16 multi-branch).[file:1]
+    // Branch management (FR‑16).[file:1]
     Route::get('/branches', [BranchAdminController::class, 'index'])->name('admin.branches');
     Route::post('/branches', [BranchAdminController::class, 'store'])->name('admin.branches.store');
     Route::post('/branches/{branch}', [BranchAdminController::class, 'update'])->name('admin.branches.update');

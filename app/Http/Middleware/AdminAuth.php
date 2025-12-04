@@ -6,10 +6,13 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Simple admin gate for /admin routes, aligning with RBAC security (NFR‑9).[file:1]
+ */
 class AdminAuth
 {
     /**
-     * Very simple admin gate for /admin routes, matching RBAC idea in NFR‑9.[file:1]
+     * Handle an incoming request.
      */
     public function handle(Request $request, Closure $next): Response
     {
