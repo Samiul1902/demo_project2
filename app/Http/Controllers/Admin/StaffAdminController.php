@@ -4,26 +4,38 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
+use Illuminate\Http\Request;
 
 class StaffAdminController extends Controller
 {
     /**
-     * Staff list for admins.
-     *
-     * This view lets salon owners see staff by branch, along with role, rating,
-     * and status, preparing for schedule management and availability (FR‑11, FR‑16).[file:1]
+     * List all staff members with basic schedule fields (FR‑11).[file:1]
      */
     public function index()
     {
-        $staff = Staff::with('schedules')
-            ->orderBy('branch')
+        $staff = Staff::orderBy('branch')
             ->orderBy('name')
             ->get();
 
         return view('admin.staff', compact('staff'));
     }
 
+    /**
+     * Update a staff member's schedule and availability (FR‑11).[file:1]
+     */
+    public function updateSchedule(Staff $staff, Request $request)
+    {
+        $data = $request->validate([
+            'shift_start' => ['nullable', 'string', 'max:50'],
+            'shift_end'   => ['nullable', 'string', 'max:50'],
+            'weekly_off'  => ['nullable', 'string', 'max:50'],
+            'status'      => ['required', 'in:Active,Inactive'],
+        ]);
 
-    // Later you can add create/store/edit/update methods
-    // and a separate controller or actions for weekly schedules.
+        $staff->update($data);
+
+        return redirect()
+            ->route('admin.staff')
+            ->with('status', 'Schedule updated for '.$staff->name.'.');
+    }
 }
