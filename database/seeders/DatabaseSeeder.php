@@ -8,13 +8,18 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     *
+     * This loads core catalog data (services, staff) so that
+     * customers can browse services and book appointments,
+     * and admins can manage staff as described in the SRS.[file:1]
      */
     public function run(): void
     {
-        // Add all seeders here
         $this->call([
-            ServiceSeeder::class,
-            // Later: BranchSeeder::class, StaffSeeder::class, etc.
-        ]);
+        ServiceSeeder::class,
+        StaffSeeder::class,
+        StaffScheduleSeeder::class,
+    ]);
+
     }
 }

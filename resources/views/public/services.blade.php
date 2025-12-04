@@ -17,6 +17,7 @@
                     <option>Skin</option>
                     <option>Makeup</option>
                     <option>Spa</option>
+                    <option>Package</option>
                 </select>
                 <select class="select">
                     <option>All branches</option>
@@ -66,11 +67,17 @@
                             </span>
                         </div>
 
-                        {{-- CTA --}}
+                        {{-- Detail + booking CTAs --}}
                         <a href="{{ route('public.service.detail', $service) }}"
+                           class="btn glow-btn"
+                           style="width:100%; text-align:center; font-size:0.8rem; margin-bottom:0.35rem; background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;">
+                            View details →
+                        </a>
+
+                        <a href="{{ route('public.booking', $service) }}"
                            class="btn btn-pink glow-btn"
                            style="width:100%; text-align:center; font-size:0.85rem;">
-                            View details →
+                            Book this service →
                         </a>
                     </article>
                 @empty

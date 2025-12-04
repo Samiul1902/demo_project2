@@ -4,36 +4,92 @@
             <h1 style="font-size:1.8rem; font-weight:800; margin-bottom:0.4rem;">
                 Book an appointment
             </h1>
-            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.8rem;">
+            <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1.4rem;">
                 Choose your service, branch, stylist, date and time to confirm your booking.
-                Later this form will be connected to real appointments and invoices as required
-                in the SRS.[file:1]
+                Your profile details are used to prefill this form when available (FR‑1, FR‑3).[file:1]
             </p>
+
+            @php
+                $allServices = \App\Models\Service::where('status', 'Active')
+                    ->orderBy('name')
+                    ->get();
+
+                $defaultService = isset($service) && $service
+                    ? $service
+                    : ($allServices->first() ?? null);
+
+                // Build a simple map: branch => [{name: 'Ayesha'}, ...] for JS.
+                $staffCollection = isset($staffByBranch) ? $staffByBranch : collect();
+                $staffMap = $staffCollection->mapWithKeys(function ($list, $branch) {
+                    return [
+                        $branch => $list->map(function ($s) {
+                            return ['name' => $s->name];
+                        })->values(),
+                    ];
+                });
+
+                $currentCustomer = $customer ?? null;
+                $prefBranch = old('branch', $currentCustomer->preferred_branch ?? 'Banani Branch');
+            @endphp
+
+            {{-- Small hint if profile is missing --}}
+            @if(!$currentCustomer)
+                <div class="card" style="margin-bottom:1rem; font-size:0.85rem; color:#9ca3af;">
+                    For faster booking next time, you can save your details in
+                    <a href="{{ route('public.profile') }}" style="color:#fb7185; text-decoration:underline;">
+                        My profile
+                    </a> (FR‑1).[file:1]
+                </div>
+            @endif
 
             <div class="row" style="gap:2rem;">
                 {{-- Left: booking form --}}
                 <div class="col-half">
                     <div class="card">
-                        <form id="bookingForm">
+                        <form id="bookingForm" method="POST" action="{{ route('booking.store') }}">
+                            @csrf
+
+                            {{-- Customer info --}}
+                            <div style="margin-bottom:0.9rem;">
+                                <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
+                                    Your name *
+                                </label>
+                                <input type="text"
+                                       name="customer_name"
+                                       value="{{ old('customer_name', $currentCustomer->name ?? '') }}"
+                                       required
+                                       style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
+                            </div>
+
+                            <div style="margin-bottom:0.9rem;">
+                                <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
+                                    Phone (for SMS reminders)
+                                </label>
+                                <input type="text"
+                                       name="customer_phone"
+                                       value="{{ old('customer_phone', $currentCustomer->phone ?? '') }}"
+                                       style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
+                            </div>
+
                             {{-- Service --}}
                             <div style="margin-bottom:0.9rem;">
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Service *
                                 </label>
                                 <select class="select" style="width:100%;" id="serviceSelect">
-                                    <option value="Premium Haircut" data-price="800" data-duration="45">
-                                        Premium Haircut – BDT 800 (45 min)
-                                    </option>
-                                    <option value="Facial Treatment" data-price="1200" data-duration="60">
-                                        Facial Treatment – BDT 1200 (60 min)
-                                    </option>
-                                    <option value="Bridal Makeup" data-price="5000" data-duration="120">
-                                        Bridal Makeup – BDT 5000 (120 min)
-                                    </option>
-                                    <option value="Hair Spa" data-price="1500" data-duration="90">
-                                        Hair Spa – BDT 1500 (90 min)
-                                    </option>
+                                    @foreach($allServices as $s)
+                                        <option value="{{ $s->id }}"
+                                                data-name="{{ $s->name }}"
+                                                data-price="{{ $s->price }}"
+                                                data-duration="{{ $s->duration }}"
+                                                @if($defaultService && $defaultService->id === $s->id) selected @endif>
+                                            {{ $s->name }} – BDT {{ $s->price }} ({{ $s->duration }} min)
+                                        </option>
+                                    @endforeach
                                 </select>
+                                {{-- Hidden service_id actually submitted to backend --}}
+                                <input type="hidden" name="service_id" id="serviceIdInput"
+                                       value="{{ $defaultService?->id }}">
                             </div>
 
                             {{-- Branch --}}
@@ -41,23 +97,28 @@
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Branch *
                                 </label>
-                                <select class="select" style="width:100%;" id="branchSelect">
-                                    <option>Banani Branch</option>
-                                    <option>Dhanmondi Branch</option>
-                                    <option>Gulshan Branch</option>
+                                <select class="select" style="width:100%;" id="branchSelect" name="branch">
+                                    <option {{ $prefBranch === 'Banani Branch' ? 'selected' : '' }}>Banani Branch</option>
+                                    <option {{ $prefBranch === 'Dhanmondi Branch' ? 'selected' : '' }}>Dhanmondi Branch</option>
+                                    <option {{ $prefBranch === 'Gulshan Branch' ? 'selected' : '' }}>Gulshan Branch</option>
                                 </select>
                             </div>
 
-                            {{-- Stylist --}}
+                            {{-- Stylist (from DB staff, filtered by branch via JS) --}}
                             <div style="margin-bottom:0.9rem;">
                                 <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                     Stylist preference
                                 </label>
-                                <select class="select" style="width:100%;" id="stylistSelect">
-                                    <option>Any available stylist</option>
-                                    <option>Ayesha (4.8★)</option>
-                                    <option>Fahim (4.6★)</option>
-                                    <option>Nadia (4.9★)</option>
+                                <select class="select" style="width:100%;" id="stylistSelect" name="stylist_preference">
+                                    <option value="">Any available stylist</option>
+                                    @if(isset($staffByBranch))
+                                        @foreach($staffByBranch->flatten() as $stylist)
+                                            <option value="{{ $stylist->name }}"
+                                                    {{ old('stylist_preference', $currentCustomer->preferred_stylist ?? '') === $stylist->name ? 'selected' : '' }}>
+                                                {{ $stylist->name }} ({{ $stylist->branch }})
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
 
@@ -69,18 +130,24 @@
                                     </label>
                                     <input type="date"
                                            id="dateInput"
+                                           name="date"
+                                           value="{{ old('date') }}"
+                                           required
                                            style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.45rem 0.8rem; font-size:0.85rem;">
                                 </div>
                                 <div style="flex:1 1 0;">
                                     <label style="display:block; font-size:0.8rem; color:#9ca3af; margin-bottom:0.25rem;">
                                         Time *
                                     </label>
-                                    <select class="select" style="width:100%;" id="timeSelect">
-                                        <option>10:00 AM</option>
-                                        <option>11:30 AM</option>
-                                        <option>3:30 PM</option>
-                                        <option>4:15 PM</option>
-                                        <option>5:00 PM</option>
+                                    <select class="select" style="width:100%;" id="timeSelect" name="time" required>
+                                        @php
+                                            $timeOld = old('time', '10:00 AM');
+                                        @endphp
+                                        <option {{ $timeOld === '10:00 AM' ? 'selected' : '' }}>10:00 AM</option>
+                                        <option {{ $timeOld === '11:30 AM' ? 'selected' : '' }}>11:30 AM</option>
+                                        <option {{ $timeOld === '3:30 PM' ? 'selected' : '' }}>3:30 PM</option>
+                                        <option {{ $timeOld === '4:15 PM' ? 'selected' : '' }}>4:15 PM</option>
+                                        <option {{ $timeOld === '5:00 PM' ? 'selected' : '' }}>5:00 PM</option>
                                     </select>
                                 </div>
                             </div>
@@ -91,16 +158,16 @@
                                     Special requests (optional)
                                 </label>
                                 <textarea id="notesInput"
+                                          name="notes"
                                           rows="3"
                                           style="width:100%; background:#020617; border-radius:0.75rem; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb; padding:0.55rem 0.8rem; font-size:0.85rem; resize:vertical;"
-                                          placeholder="Any specific preferences or instructions?"></textarea>
+                                          placeholder="Any specific preferences or instructions?">{{ old('notes') }}</textarea>
                             </div>
 
-                            <button type="button"
+                            <button type="submit"
                                     class="btn btn-pink glow-btn"
-                                    style="width:100%; margin-top:0.25rem;"
-                                    onclick="openConfirmation()">
-                                Confirm booking (UI only)
+                                    style="width:100%; margin-top:0.25rem;">
+                                Confirm booking
                             </button>
                         </form>
                     </div>
@@ -115,15 +182,23 @@
 
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Service</span>
-                            <span id="summaryService">Premium Haircut</span>
+                            <span id="summaryService">
+                                {{ $defaultService?->name ?? 'Not selected' }}
+                            </span>
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Duration</span>
-                            <span id="summaryDuration">45 min</span>
+                            <span id="summaryDuration">
+                                @if($defaultService)
+                                    {{ $defaultService->duration }} min
+                                @else
+                                    Not selected
+                                @endif
+                            </span>
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Branch</span>
-                            <span id="summaryBranch">Banani Branch</span>
+                            <span id="summaryBranch">{{ $prefBranch }}</span>
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Date</span>
@@ -131,14 +206,20 @@
                         </div>
                         <div style="font-size:0.9rem; margin-bottom:0.6rem; display:flex; justify-content:space-between;">
                             <span>Time</span>
-                            <span id="summaryTime">10:00 AM</span>
+                            <span id="summaryTime">{{ $timeOld }}</span>
                         </div>
 
                         <hr style="border-color:rgba(148,163,184,0.25); margin:0.9rem 0;">
 
                         <div style="font-size:0.9rem; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Service price</span>
-                            <span id="summaryPrice">BDT 800</span>
+                            <span id="summaryPrice">
+                                @if($defaultService)
+                                    BDT {{ $defaultService->price }}
+                                @else
+                                    BDT 0
+                                @endif
+                            </span>
                         </div>
                         <div style="font-size:0.85rem; color:#22c55e; margin-bottom:0.25rem; display:flex; justify-content:space-between;">
                             <span>Estimated loyalty discount</span>
@@ -146,12 +227,18 @@
                         </div>
                         <div style="font-size:1rem; font-weight:700; display:flex; justify-content:space-between; margin-top:0.15rem;">
                             <span>Total</span>
-                            <span id="summaryTotal" style="color:#fb7185;">BDT 750</span>
+                            <span id="summaryTotal" style="color:#fb7185;">
+                                @if($defaultService)
+                                    BDT {{ max(0, $defaultService->price - 50) }}
+                                @else
+                                    BDT 0
+                                @endif
+                            </span>
                         </div>
 
                         <p style="font-size:0.8rem; color:#9ca3af; margin-top:0.75rem;">
-                            You will earn <span style="color:#4ade80; font-weight:600;">75 loyalty points</span> for this booking, 
-                            which can be used in the membership system defined in the requirements.[file:1]
+                            You will earn loyalty points for this booking, which connect to the
+                            membership system described in the requirements (FR‑15/FR‑20).[file:1]
                         </p>
                     </div>
                 </div>
@@ -159,92 +246,84 @@
         </div>
     </section>
 
-    {{-- Confirmation modal --}}
-    <div id="confirmationModal" class="modal-backdrop">
-        <div class="modal-card fade-in-up">
-            <div style="width:3rem; height:3rem; border-radius:999px; background:rgba(34,197,94,0.18); display:flex; align-items:center; justify-content:center; margin:0 auto 0.75rem auto;">
-                <span style="font-size:1.6rem; color:#4ade80;">✓</span>
-            </div>
-            <h2 style="font-size:1.4rem; font-weight:800; text-align:center; margin-bottom:0.4rem;">
-                Booking confirmed (demo)
-            </h2>
-            <p style="font-size:0.85rem; color:#9ca3af; text-align:center; margin-bottom:0.9rem;">
-                In the final system, this step will generate a digital invoice and send SMS/Email 
-                confirmation according to FR‑4 and FR‑8.[file:1]
-            </p>
-
-            <div class="card" style="font-size:0.85rem; margin-bottom:0.9rem;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Service</span><span id="modalService">Premium Haircut</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Date &amp; time</span><span id="modalDateTime">–</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span>Branch</span><span id="modalBranch">–</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span>Amount</span><span id="modalAmount">BDT 750</span>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:0.5rem; justify-content:center;">
-                <a href="{{ route('public.bookings') }}" class="btn btn-pink glow-btn" style="flex:1; text-align:center;">
-                    Go to My Bookings
-                </a>
-                <button type="button" class="btn glow-btn"
-                        style="flex:1; background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;"
-                        onclick="closeConfirmation()">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const serviceSelect = document.getElementById('serviceSelect');
-        const branchSelect = document.getElementById('branchSelect');
-        const dateInput = document.getElementById('dateInput');
-        const timeSelect = document.getElementById('timeSelect');
+        // Staff map injected from PHP (branch => [{name: ...}, ...])
+        // Wrapped in a string so the JS/TS language service does not misinterpret Blade syntax.
+        const staffByBranch = JSON.parse(`@json($staffMap)`);
 
-        function updateSummary() {
-            const selected = serviceSelect.options[serviceSelect.selectedIndex];
-            const name = selected.value;
-            const price = selected.getAttribute('data-price');
-            const duration = selected.getAttribute('data-duration');
+        function updateStylistsForBranch() {
+            const branchSelect = document.getElementById('branchSelect');
+            const stylistSelect = document.getElementById('stylistSelect');
+            if (!branchSelect || !stylistSelect) return;
 
-            document.getElementById('summaryService').textContent = name;
-            document.getElementById('summaryDuration').textContent = duration + ' min';
-            document.getElementById('summaryPrice').textContent = 'BDT ' + price;
-            document.getElementById('summaryTotal').textContent = 'BDT ' + (price - 50);
-            document.getElementById('summaryBranch').textContent = branchSelect.value;
+            // Branch select text is like "Banani Branch" -> key "Banani"
+            const raw = branchSelect.value || '';
+            const branchKey = raw.replace(' Branch', '');
+            const list = staffByBranch[branchKey] || [];
 
-            document.getElementById('summaryDate').textContent = dateInput.value || 'Not selected';
-            document.getElementById('summaryTime').textContent = timeSelect.value;
+            stylistSelect.innerHTML = '';
+            const anyOpt = document.createElement('option');
+            anyOpt.value = '';
+            anyOpt.textContent = 'Any available stylist';
+            stylistSelect.appendChild(anyOpt);
 
-            // also prepare modal
-            document.getElementById('modalService').textContent = name;
-            document.getElementById('modalBranch').textContent = branchSelect.value;
-            document.getElementById('modalAmount').textContent = 'BDT ' + (price - 50);
-            document.getElementById('modalDateTime').textContent =
-                (dateInput.value || 'Not selected') + ' at ' + timeSelect.value;
+            list.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.name;
+                opt.textContent = s.name;
+                stylistSelect.appendChild(opt);
+            });
         }
 
-        serviceSelect.addEventListener('change', updateSummary);
-        branchSelect.addEventListener('change', updateSummary);
-        dateInput.addEventListener('change', updateSummary);
-        timeSelect.addEventListener('change', updateSummary);
+        function updateSummaryFromForm() {
+            const serviceSelect  = document.getElementById('serviceSelect');
+            const serviceIdInput = document.getElementById('serviceIdInput');
+            const branchSelect   = document.getElementById('branchSelect');
+            const dateInput      = document.getElementById('dateInput');
+            const timeSelect     = document.getElementById('timeSelect');
 
-        function openConfirmation() {
-            updateSummary();
-            document.getElementById('confirmationModal').classList.add('show');
+            if (serviceSelect) {
+                const opt = serviceSelect.options[serviceSelect.selectedIndex];
+                const name = opt.getAttribute('data-name') || opt.textContent;
+                const price = parseInt(opt.getAttribute('data-price') || '0', 10);
+                const duration = opt.getAttribute('data-duration') || '';
+
+                document.getElementById('summaryService').textContent  = name;
+                document.getElementById('summaryDuration').textContent = duration ? duration + ' min' : '—';
+                document.getElementById('summaryPrice').textContent    = 'BDT ' + price;
+                document.getElementById('summaryTotal').textContent    = 'BDT ' + Math.max(0, price - 50);
+
+                if (serviceIdInput) {
+                    serviceIdInput.value = serviceSelect.value;
+                }
+            }
+
+            if (branchSelect) {
+                document.getElementById('summaryBranch').textContent = branchSelect.value;
+            }
+            if (dateInput) {
+                document.getElementById('summaryDate').textContent = dateInput.value || 'Not selected';
+            }
+            if (timeSelect) {
+                document.getElementById('summaryTime').textContent = timeSelect.value;
+            }
         }
 
-        function closeConfirmation() {
-            document.getElementById('confirmationModal').classList.remove('show');
-        }
+        document.addEventListener('DOMContentLoaded', function () {
+            ['serviceSelect', 'branchSelect', 'dateInput', 'timeSelect'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', function () {
+                    if (id === 'branchSelect') {
+                        updateStylistsForBranch();
+                    }
+                    updateSummaryFromForm();
+                });
+            });
 
-        // initialize once
-        updateSummary();
+            // Initial setup
+            updateStylistsForBranch();
+            updateSummaryFromForm();
+        });
     </script>
 </x-app-layout>

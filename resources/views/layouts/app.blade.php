@@ -6,6 +6,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        .status-pending   { color: #fbbf24; }
+        .status-approved  { color: #4ade80; }
+        .status-rejected  { color: #f97373; }
+        .status-completed { color: #60a5fa; }
+        .status-default   { color: #e5e7eb; }
+
         .fade-in-up {
             opacity: 0;
             transform: translateY(20px);

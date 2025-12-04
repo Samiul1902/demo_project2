@@ -9,11 +9,15 @@ class ServiceSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * Seeds the core salon services so users can browse services and pricing
+     * (FR‑2) and admins can manage them from the admin panel (FR‑10).[file:1]
      */
     public function run(): void
     {
-        // Clear existing data in dev
-        Service::truncate();
+        // Because bookings has a FK to services, use delete() not truncate().
+        // DELETE respects ON DELETE CASCADE defined in the bookings migration.
+        Service::query()->delete();
 
         Service::insert([
             // Hair services
