@@ -1,45 +1,70 @@
 <?php
 
-namespace App\Console;
+namespace App\Http;
 
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
-class Kernel extends ConsoleKernel
+class Kernel extends HttpKernel
 {
     /**
-     * The Artisan commands provided by your application.
+     * The application's global HTTP middleware stack.
      *
-     * Commands in app/Console/Commands are auto-discovered in recent Laravel
-     * versions, so this array can stay empty unless you want to force‑register.[file:1]
+     * These run on every request to your application.[file:1]
      *
-     * @var array<int, class-string<\Illuminate\Console\Command>>
+     * @var array<int, class-string|string>
      */
-    protected $commands = [
-        // \App\Console\Commands\SendAppointmentReminders::class,
+    protected $middleware = [
+        // \App\Http\Middleware\TrustHosts::class,
+        \App\Http\Middleware\TrustProxies::class,
+        \Illuminate\Http\Middleware\HandleCors::class,
+        \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+        \App\Http\Middleware\TrimStrings::class,
+        \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
     ];
 
     /**
-     * Define the application's command schedule.
+     * The application's route middleware groups.
+     *
+     * @var array<string, array<int, class-string|string>>
      */
-    protected function schedule(Schedule $schedule): void
-    {
-        // Automated SMS/Email reminder prototype for upcoming appointments (FR‑19).[file:1]
-        // This runs every day at 18:00 and calls the custom command:
-        // php artisan ssbp:send-reminders
-        //
-        // The command itself creates rows in notification_logs for bookings
-        // scheduled for tomorrow with status Pending or Approved.
-        $schedule->command('ssbp:send-reminders')->dailyAt('18:00');
-    }
+    protected $middlewareGroups = [
+        'web' => [
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            // \Illuminate\Session\Middleware\AuthenticateSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ],
+
+        'api' => [
+            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ],
+    ];
 
     /**
-     * Register the commands for the application.
+     * The application's route middleware.
+     *
+     * These may be assigned to groups or used individually.[file:1]
+     *
+     * @var array<string, class-string|string>
      */
-    protected function commands(): void
-    {
-        $this->load(__DIR__.'/Commands');
+    protected $routeMiddleware = [
+        'auth'             => \App\Http\Middleware\Authenticate::class,
+        'auth.basic'       => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+        'cache.headers'    => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+        'can'              => \Illuminate\Auth\Middleware\Authorize::class,
+        'guest'            => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
+        'signed'           => \Illuminate\Routing\Middleware\ValidateSignature::class,
+        'throttle'         => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        'verified'         => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 
-        require base_path('routes/console.php');
-    }
+        // Custom admin middleware for RBAC-style protection on /admin routes (NFR‑9).[file:1]
+        'admin'            => \App\Http\Middleware\AdminAuth::class,
+    ];
 }

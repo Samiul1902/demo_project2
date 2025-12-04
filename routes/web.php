@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\PaymentController;
 
 // Admin controllers
 use App\Http\Controllers\Admin\ServiceAdminController;
@@ -85,6 +86,19 @@ Route::get('/recommendations', [RecommendationController::class, 'index'])
 // Chatbot demo page (FR‑18 prototype).[file:1]
 Route::view('/chatbot', 'public.chatbot')->name('public.chatbot');
 
+// SSLCommerz payment integration (FR‑22)
+// Start payment for a booking.
+Route::post('/payment/sslcommerz/start/{booking}', [PaymentController::class, 'start'])
+    ->name('payment.sslcommerz.start');
+
+// Callback URLs configured in SSLCommerz dashboard.[web:15]
+Route::post('/payment/sslcommerz/success', [PaymentController::class, 'success'])
+    ->name('payment.sslcommerz.success');
+Route::post('/payment/sslcommerz/fail', [PaymentController::class, 'fail'])
+    ->name('payment.sslcommerz.fail');
+Route::post('/payment/sslcommerz/cancel', [PaymentController::class, 'cancel'])
+    ->name('payment.sslcommerz.cancel');
+
 
 /**
  * Admin routes
@@ -123,7 +137,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/feedback', [FeedbackController::class, 'adminIndex'])
         ->name('admin.feedback');
 
-    // Notification log for booking events (FR‑8).[file:1]
+    // Notification log for booking events and reminders (FR‑8, FR‑19).[file:1]
     Route::get('/notifications', [NotificationAdminController::class, 'index'])
         ->name('admin.notifications');
 });

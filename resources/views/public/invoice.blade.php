@@ -10,6 +10,13 @@
                 as part of FR‑15/FR‑20.[file:1]
             </p>
 
+            @if(session('status'))
+                <div class="card"
+                     style="margin-bottom:1rem; font-size:0.85rem; color:#bbf7d0; border-color:rgba(34,197,94,0.4);">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             <div class="card" style="margin-bottom:1.2rem;">
                 @php
                     $dt = \Carbon\Carbon::parse($booking->date.' '.$booking->time);
@@ -98,17 +105,33 @@
                 </p>
             </div>
 
-            <div style="display:flex; justify-content:space-between; gap:0.7rem;">
+            {{-- Actions: back, print, and pay online --}}
+            <div style="display:flex; justify-content:space-between; gap:0.7rem; align-items:center;">
                 <a href="{{ route('public.bookings') }}"
                    class="btn glow-btn"
                    style="background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;">
                     Back to my bookings
                 </a>
-                <button type="button"
-                        class="btn btn-pink glow-btn"
-                        onclick="window.print()">
-                    Print / Save as PDF
-                </button>
+
+                <div style="display:flex; gap:0.5rem; margin-left:auto;">
+                    {{-- Print button --}}
+                    <button type="button"
+                            class="btn glow-btn"
+                            style="background:transparent; border-color:rgba(148,163,184,0.6); color:#e5e7eb;"
+                            onclick="window.print()">
+                        Print / Save as PDF
+                    </button>
+
+                    {{-- SSLCommerz payment button (FR‑22) --}}
+                    <form action="{{ route('payment.sslcommerz.start', $booking) }}"
+                          method="POST">
+                        @csrf
+                        <button type="submit"
+                                class="btn btn-pink glow-btn">
+                            Pay online (SSLCommerz)
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
